@@ -5,17 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>KRAVIN DELIVERY</title>
 
-  <!-- Snipcart -->
-  <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
-  <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
-  <div hidden id="snipcart" 
-       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
-       data-currency="jmd">
-  </div>
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <!-- PayPal SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,19 +45,6 @@
       left: 0;
       font-size: 28px;
       cursor: pointer;
-      background: white;
-      padding: 8px 12px;
-      z-index: 1001;
-      height: 50px;
-      display: flex;
-      align-items: center;
-    }
-
-    .cart-icon {
-      position: fixed;
-      top: 0;
-      right: 0;
-      font-size: 28px;
       background: white;
       padding: 8px 12px;
       z-index: 1001;
@@ -126,6 +108,7 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
+      margin-bottom: 20px;
     }
 
     .product {
@@ -149,7 +132,7 @@
       margin: 4px 0;
     }
 
-    .snipcart-add-item {
+    .add-to-cart-btn {
       background-color: #ff6600;
       color: white;
       padding: 8px 16px;
@@ -159,34 +142,55 @@
       margin-top: 8px;
     }
 
-    .snipcart-add-item:hover {
+    .add-to-cart-btn:hover {
       background-color: #e65c00;
     }
 
-    .logout-btn {
-      background-color: red;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
+    form {
+      background: white;
+      max-width: 400px;
+      margin: 0 auto 40px auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    .logout-btn:hover {
-      background-color: darkred;
+    form label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
     }
+
+    form input, form textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    #cart-summary {
+      max-width: 400px;
+      margin: 0 auto 20px auto;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #empty-cart-msg {
+      text-align: center;
+      color: #555;
+      margin: 20px 0;
+    }
+
   </style>
 </head>
 <body>
 
   <!-- Menu Icon -->
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
-
-  <!-- Cart Icon -->
-  <div class="cart-icon">
-    <button class="snipcart-checkout" style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
-  </div>
 
   <!-- Top Bar -->
   <div class="top-bar"><h1>KRAVIN DELIVERY</h1></div>
@@ -195,7 +199,6 @@
   <div class="dropdown" id="menu-dropdown">
     <div class="user-info" id="user-profile">Loading profile...</div>
 
-    <!-- Added Title -->
     <div class="dropdown-title">RESTAURANTS</div>
 
     <a href="#" onclick="loadMenu('KFC')">KFC</a>
@@ -207,6 +210,29 @@
 
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
+
+  <!-- Cart Summary -->
+  <div id="cart-summary">
+    <h3>Your Cart</h3>
+    <ul id="cart-items"></ul>
+    <p id="empty-cart-msg">Your cart is empty.</p>
+    <p><strong>Total: $<span id="cart-total">0.00</span></strong></p>
+  </div>
+
+  <!-- Delivery Info Form -->
+  <form id="delivery-form">
+    <h3>Delivery Information</h3>
+    <label for="customerName">Name *</label>
+    <input type="text" id="customerName" name="customerName" required />
+
+    <label for="customerPhone">Phone *</label>
+    <input type="tel" id="customerPhone" name="customerPhone" required pattern="[0-9+ ]{7,15}" placeholder="+1234567890" />
+
+    <label for="customerAddress">Address *</label>
+    <textarea id="customerAddress" name="customerAddress" required rows="3"></textarea>
+
+    <div id="paypal-button-container"></div>
+  </form>
 
   <script>
     // Firebase config
@@ -223,24 +249,24 @@
 
     // Show profile + logout
     firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const date = new Date(user.metadata.creationTime).toLocaleDateString();
-    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+      const profile = document.getElementById("user-profile");
+      if (user) {
+        const name = user.displayName || user.email.split('@')[0];
+        const email = user.email;
+        const date = new Date(user.metadata.creationTime).toLocaleDateString();
+        const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-    profile.innerHTML = `
-      <img src="${avatar}" alt="avatar" />
-      <p><strong>${name}</strong></p>
-      <p>${email}</p>
-      <p>Joined: ${date}</p>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    `;
-  } else {
-    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-  }
-});
+        profile.innerHTML = `
+          <img src="${avatar}" alt="avatar" />
+          <p><strong>${name}</strong></p>
+          <p>${email}</p>
+          <p>Joined: ${date}</p>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        `;
+      } else {
+        profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
+      }
+    });
 
     function logout() {
       firebase.auth().signOut().then(() => {
@@ -283,17 +309,16 @@
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
               <p><strong>${item.Price}</strong></p>
-              <button class="snipcart-add-item"
-                data-item-id="${item.Name}"
-                data-item-name="${item.Name}"
-                data-item-price="${item.Price.replace(/[^0-9.]/g, '')}"
-                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
-                data-item-image="${item.Image}">
+              <button class="add-to-cart-btn"
+                data-id="${item.Name}"
+                data-name="${item.Name}"
+                data-price="${parseFloat(item.Price.replace(/[^0-9.]/g, ''))}">
                 Add to Cart
               </button>
             `;
             container.appendChild(product);
           });
+          attachAddToCartEvents();
         })
         .catch(() => {
           container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
@@ -301,6 +326,136 @@
 
       // Hide menu after selection
       document.getElementById("menu-dropdown").style.display = "none";
+    }
+
+    // Cart functionality
+    let cart = [];
+
+    function attachAddToCartEvents() {
+      document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute('data-id');
+          const name = btn.getAttribute('data-name');
+          const price = parseFloat(btn.getAttribute('data-price'));
+          addToCart({id, name, price});
+        };
+      });
+    }
+
+    function addToCart(item) {
+      const existing = cart.find(i => i.id === item.id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        item.qty = 1;
+        cart.push(item);
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const cartItems = document.getElementById('cart-items');
+      const emptyMsg = document.getElementById('empty-cart-msg');
+      cartItems.innerHTML = '';
+      if (cart.length === 0) {
+        emptyMsg.style.display = 'block';
+        document.getElementById('cart-total').textContent = '0.00';
+        return;
+      } else {
+        emptyMsg.style.display = 'none';
+      }
+      let total = 0;
+      cart.forEach(item => {
+        total += item.price * item.qty;
+        const li = document.createElement('li');
+        li.textContent = `${item.name} x ${item.qty} - $${(item.price * item.qty).toFixed(2)}`;
+        cartItems.appendChild(li);
+      });
+      document.getElementById('cart-total').textContent = total.toFixed(2);
+    }
+
+    // PayPal Buttons rendering and logic
+    paypal.Buttons({
+      onInit: function(data, actions) {
+        // Disable the buttons initially
+        actions.disable();
+
+        // Enable if form valid and cart not empty
+        const form = document.getElementById('delivery-form');
+        form.addEventListener('input', () => {
+          if (form.checkValidity() && cart.length > 0) {
+            actions.enable();
+          } else {
+            actions.disable();
+          }
+        });
+
+        // Also check cart changes
+        const observer = new MutationObserver(() => {
+          if (form.checkValidity() && cart.length > 0) {
+            actions.enable();
+          } else {
+            actions.disable();
+          }
+        });
+        observer.observe(document.getElementById('cart-items'), {childList: true});
+      },
+
+      createOrder: function(data, actions) {
+        const total = parseFloat(document.getElementById('cart-total').textContent);
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: total.toFixed(2)
+            },
+            description: 'KRAVIN DELIVERY Order'
+          }]
+        });
+      },
+
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          alert('Payment completed by ' + details.payer.name.given_name);
+
+          // Send WhatsApp message with delivery info and payment confirmation
+          sendWhatsAppNotification(details);
+          
+          // Clear cart and form
+          cart = [];
+          updateCartUI();
+          document.getElementById('delivery-form').reset();
+        });
+      },
+
+      onError: function(err) {
+        alert('Payment could not be processed. Please try again.');
+        console.error(err);
+      }
+    }).render('#paypal-button-container');
+
+    // WhatsApp notification logic
+    function sendWhatsAppNotification(paymentDetails) {
+      const name = document.getElementById('customerName').value.trim();
+      const phone = document.getElementById('customerPhone').value.trim();
+      const address = document.getElementById('customerAddress').value.trim();
+
+      // Construct order summary text
+      let orderText = 'Order details:\n';
+      cart.forEach(item => {
+        orderText += `- ${item.name} x ${item.qty} = $${(item.price * item.qty).toFixed(2)}\n`;
+      });
+      orderText += `Total: $${document.getElementById('cart-total').textContent}\n\n`;
+
+      const message = `New order from *${name}*\nPhone: ${phone}\nAddress: ${address}\n\n${orderText}Payment confirmed via PayPal.`;
+
+      // WhatsApp number (in international format without +, e.g., 1234567890)
+      const whatsappNumber = 'YOUR_WHATSAPP_NUMBER';
+
+      // URL encode message
+      const encodedMessage = encodeURIComponent(message);
+
+      // Open WhatsApp chat in a new tab to send message manually
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
     }
 
     // Load default menu
