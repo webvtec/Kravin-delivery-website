@@ -21,20 +21,20 @@
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
-      padding-top: 80px;
+      padding-top: 50px;
     }
 
     .top-bar {
       position: fixed;
       top: 0;
-      left: 0;
-      right: 0;
+      left: 50px;
+      right: 50px;
       height: 50px;
       background-color: red;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      z-index: 998;
     }
 
     .top-bar h1 {
@@ -52,7 +52,7 @@
     .product {
       background: white;
       padding: 12px;
-      border-radius: 10px;
+      border-radius: 0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       text-align: center;
     }
@@ -60,7 +60,7 @@
     .product img {
       max-width: 100%;
       height: auto;
-      border-radius: 8px;
+      border-radius: 0;
     }
 
     .product h3 {
@@ -76,7 +76,7 @@
       color: white;
       padding: 8px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 0;
       cursor: pointer;
       margin-top: 8px;
     }
@@ -89,13 +89,33 @@
       position: fixed;
       top: 0;
       left: 0;
-      font-size: 28px;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
       cursor: pointer;
       background: white;
-      padding: 8px 12px;
-      border-radius: 0 0 0 6px;
-      z-index: 1001;
-      box-shadow: -2px 2px 6px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      z-index: 999;
+      border-right: 1px solid #ddd;
+    }
+
+    .cart-icon {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0;
+      z-index: 999;
+      border-left: 1px solid #ddd;
     }
 
     .dropdown {
@@ -104,7 +124,7 @@
       left: 0;
       background: white;
       border: 1px solid #ccc;
-      border-radius: 0 6px 6px 0;
+      border-radius: 0;
       padding: 10px;
       display: none;
       z-index: 1000;
@@ -122,24 +142,19 @@
     .dropdown a:hover {
       background-color: #f0f0f0;
     }
-
-    .cart-icon {
-      position: fixed;
-      top: 0;
-      right: 0;
-      font-size: 28px;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 0 0 0 6px;
-      z-index: 1001;
-      box-shadow: -2px 2px 6px rgba(0,0,0,0.2);
-    }
   </style>
 </head>
 <body>
 
   <!-- Menu Icon -->
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
+
+  <!-- Cart Icon -->
+  <div class="cart-icon">
+    <button class="snipcart-checkout" style="background: none; border: none; font-size: 24px; cursor: pointer;">
+      🛒
+    </button>
+  </div>
 
   <!-- Dropdown Menu -->
   <div class="dropdown" id="menu-dropdown">
@@ -148,13 +163,6 @@
     <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
     <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
     <a href="#" onclick="loadMenu('Tastees')">Tastees</a>
-  </div>
-
-  <!-- Cart Icon -->
-  <div class="cart-icon">
-    <button class="snipcart-checkout" style="background: none; border: none; font-size: 24px; cursor: pointer;">
-      🛒
-    </button>
   </div>
 
   <!-- Top Bar Title -->
