@@ -121,9 +121,9 @@
     });
 
     // Fetch products from Google Sheets
-    const sheetId = "1En6VDJfoG0eG7JlabNspYP7Cqc3PzZVU-87kwJdZjgQ";
-    const sheetName = "Sheet1";
-    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+    const sheetId = "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA";
+const sheetName = "Sheet1"; // Change if you've renamed the tab
+const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
     fetch(sheetUrl)
       .then(res => res.json())
