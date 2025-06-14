@@ -157,6 +157,20 @@
     .snipcart-add-item:hover {
       background-color: #e65c00;
     }
+
+    .logout-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .logout-btn:hover {
+      background-color: darkred;
+    }
   </style>
 </head>
 <body>
@@ -195,10 +209,10 @@
       messagingSenderId: "1035748923136",
       appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
     };
-    
+
     firebase.initializeApp(firebaseConfig);
 
-    // Show profile when logged in
+    // Show profile + logout
     firebase.auth().onAuthStateChanged(user => {
       const profile = document.getElementById("user-profile");
       if (user) {
@@ -212,11 +226,20 @@
           <p><strong>${name}</strong></p>
           <p>${email}</p>
           <p>Joined: ${date}</p>
+          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
         `;
       } else {
         profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
       }
     });
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      }).catch(error => {
+        alert("Logout failed: " + error.message);
+      });
+    }
 
     // Toggle Menu
     function toggleMenu() {
