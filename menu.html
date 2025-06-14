@@ -9,15 +9,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
-  />
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+  <!-- Leaflet Control Geocoder -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,6 +81,8 @@
       padding: 10px;
       display: none;
       z-index: 1000;
+      overflow-y: auto;
+      max-height: calc(100vh - 50px);
     }
 
     .dropdown-title {
@@ -128,7 +128,6 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
-      margin-bottom: 20px;
     }
 
     .product {
@@ -166,15 +165,13 @@
       background-color: darkred;
     }
 
-    /* New map styles */
+    /* Map container */
     #map {
-      height: 400px;
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto 40px auto;
+      height: 300px;
+      margin: 10px;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 0;
     }
   </style>
 </head>
@@ -208,12 +205,8 @@
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
 
-  <!-- Map Container -->
+  <!-- Map -->
   <div id="map"></div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
   <script>
     // Firebase config
@@ -302,82 +295,70 @@
       document.getElementById("menu-dropdown").style.display = "none";
     }
 
-    // Load default menu on window load (also init map)
+    // Load default menu
     window.onload = () => {
       loadMenu("KFC");
 
-      // Jamaica approx bounds (latLng)
-      const jamaicaBounds = L.latLngBounds(
-        L.latLng(17.7, -78.4),  // SW corner approx
-        L.latLng(18.6, -76.0)   // NE corner approx
-      );
-
-      // Center of Jamaica
-      const centerJamaica = [18.0179, -76.8099];
-
-      // Initialize map
+      // Initialize Leaflet map centered in Jamaica
+      const centerJamaica = [18.1096, -77.2975];
       const map = L.map('map').setView(centerJamaica, 10);
 
-      // OpenStreetMap tiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map);
+      // Esri Satellite Imagery tiles
+      const satellite = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, ' +
+                       'Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }
+      ).addTo(map);
 
-      // Draggable marker
-      const marker = L.marker(centerJamaica, {
-        draggable: true,
-      }).addTo(map).bindPopup("Drag me to your location").openPopup();
+      // Esri Labels overlay for hybrid effect
+      const labels = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+          attribution: ''
+        }
+      ).addTo(map);
 
-      // Restrict marker to Jamaica bounds on drag
-      marker.on('dragend', (e) => {
-        const pos = marker.getLatLng();
-        if (!jamaicaBounds.contains(pos)) {
-          alert('Please keep the location inside Jamaica!');
-          // Snap back to previous position inside bounds
-          marker.setLatLng(centerJamaica);
-          map.panTo(centerJamaica);
+      // Add draggable marker starting at center
+      const marker = L.marker(centerJamaica, {draggable:true}).addTo(map);
+
+      // Constrain marker and map to Jamaica bounds approx
+      const jamaicaBounds = L.latLngBounds(
+        L.latLng(17.7, -78.4),  // Southwest corner
+        L.latLng(18.6, -76.2)   // Northeast corner
+      );
+
+      // Restrict marker dragging inside Jamaica
+      marker.on('drag', function(e) {
+        if (!jamaicaBounds.contains(marker.getLatLng())) {
+          // Snap marker back inside bounds
+          const lat = Math.min(Math.max(marker.getLatLng().lat, jamaicaBounds.getSouth()), jamaicaBounds.getNorth());
+          const lng = Math.min(Math.max(marker.getLatLng().lng, jamaicaBounds.getWest()), jamaicaBounds.getEast());
+          marker.setLatLng([lat, lng]);
         }
       });
 
-      // Add geocoder search control restricted to Jamaica
-      const geocoder = L.Control.geocoder({
+      // Add geocoder control limited to Jamaica
+      L.Control.geocoder({
         defaultMarkGeocode: false,
         geocoder: L.Control.Geocoder.nominatim({
           geocodingQueryParams: {
-            countrycodes: 'jm',  // restrict to Jamaica
-            viewbox: `${jamaicaBounds.getSouthWest().lng},${jamaicaBounds.getSouthWest().lat},${jamaicaBounds.getNorthEast().lng},${jamaicaBounds.getNorthEast().lat}`,
-            bounded: 1
+            countrycodes: 'jm'
           }
-        }),
-        placeholder: 'Search Jamaica...',
-        collapsed: false,
-        position: 'topright'
-      }).addTo(map);
-
-      geocoder.on('markgeocode', function(e) {
+        })
+      })
+      .on('markgeocode', function(e) {
         const bbox = e.geocode.bbox;
-        const latlng = e.geocode.center;
+        const center = e.geocode.center;
 
-        // Check if location is inside Jamaica bounds
-        if (!jamaicaBounds.contains(latlng)) {
-          alert("Please select a location inside Jamaica.");
-          return;
-        }
-
-        // Move marker to searched location and open popup
-        marker.setLatLng(latlng).bindPopup(e.geocode.name).openPopup();
-
-        // Zoom to bbox or to searched location
-        if (bbox) {
-          map.fitBounds([
-            [bbox.getSouthWest().lat, bbox.getSouthWest().lng],
-            [bbox.getNorthEast().lat, bbox.getNorthEast().lng]
-          ]);
+        // Check if location inside Jamaica bounds before accepting
+        if (jamaicaBounds.contains(center)) {
+          marker.setLatLng(center);
+          map.fitBounds(bbox);
         } else {
-          map.setView(latlng, 14);
+          alert('Please select a location inside Jamaica.');
         }
-      });
+      })
+      .addTo(map);
     };
   </script>
 </body>
