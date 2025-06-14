@@ -61,6 +61,7 @@
       height: 50px;
       display: flex;
       align-items: center;
+      cursor: pointer;
     }
 
     .dropdown {
@@ -125,6 +126,7 @@
       padding: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       text-align: center;
+      border-radius: 8px;
     }
 
     .product img {
@@ -138,7 +140,22 @@
     }
 
     .product p {
-      margin: 4px 0;
+      margin: 4px 0 10px;
+    }
+
+    .product button {
+      padding: 6px 12px;
+      background-color: red;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .product button:hover {
+      background-color: darkred;
     }
 
     .logout-btn {
@@ -162,8 +179,41 @@
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
 
   <!-- Cart Icon -->
-  <div class="cart-icon">
-    <button style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
+  <div class="cart-icon" onclick="toggleCart()">
+    <button style="background: none; border: none; font-size: 24px; cursor: pointer; position: relative;">
+      🛒
+      <span id="cart-count" style="
+        position: absolute;
+        top: -5px;
+        right: -10px;
+        background: red;
+        color: white;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 50%;
+        display: none;">0</span>
+    </button>
+  </div>
+
+  <!-- Cart Dropdown -->
+  <div id="cart-dropdown" style="
+    display:none;
+    position: fixed;
+    top: 50px;
+    right: 0;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1002;
+    padding: 10px;
+  ">
+    <h3>Your Cart</h3>
+    <div id="cart-items">
+      <p>Your cart is empty.</p>
+    </div>
   </div>
 
   <!-- Top Bar -->
@@ -173,7 +223,6 @@
   <div class="dropdown" id="menu-dropdown">
     <div class="user-info" id="user-profile">Loading profile...</div>
 
-    <!-- Added Title -->
     <div class="dropdown-title">RESTAURANTS</div>
 
     <a href="#" onclick="loadMenu('KFC')">KFC</a>
@@ -261,6 +310,7 @@
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
               <p><strong>${item.Price}</strong></p>
+              <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
             `;
             container.appendChild(product);
           });
@@ -272,6 +322,80 @@
       // Hide menu after selection
       document.getElementById("menu-dropdown").style.display = "none";
     }
+
+    // Cart management
+    const cart = [];
+
+    function addToCart(name, price, image) {
+      const existing = cart.find(i => i.name === name);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ name, price, image, quantity: 1 });
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const countElem = document.getElementById("cart-count");
+      const cartItemsElem = document.getElementById("cart-items");
+
+      // Update badge count
+      const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalQuantity > 0) {
+        countElem.style.display = "inline-block";
+        countElem.textContent = totalQuantity;
+      } else {
+        countElem.style.display = "none";
+      }
+
+      // Show items in dropdown
+      if (cart.length === 0) {
+        cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+        return;
+      }
+
+      cartItemsElem.innerHTML = "";
+      cart.forEach(item => {
+        const itemDiv = document.createElement("div");
+        itemDiv.style.display = "flex";
+        itemDiv.style.alignItems = "center";
+        itemDiv.style.marginBottom = "10px";
+
+        itemDiv.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" style="width:40px; height:40px; object-fit:cover; border-radius:5px; margin-right:8px;">
+          <div style="flex-grow:1;">
+            <strong>${item.name}</strong><br/>
+            ${item.price} x ${item.quantity}
+          </div>
+          <button onclick="removeFromCart('${item.name}')" style="background:red; border:none; color:white; border-radius:50%; width:24px; height:24px; cursor:pointer;">&times;</button>
+        `;
+
+        cartItemsElem.appendChild(itemDiv);
+      });
+    }
+
+    function removeFromCart(name) {
+      const index = cart.findIndex(i => i.name === name);
+      if (index > -1) {
+        cart.splice(index, 1);
+        updateCartUI();
+      }
+    }
+
+    function toggleCart() {
+      const dropdown = document.getElementById("cart-dropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    // Close cart dropdown if click outside
+    document.addEventListener('click', function(event) {
+      const cartDropdown = document.getElementById('cart-dropdown');
+      const cartIcon = document.querySelector('.cart-icon');
+      if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+        cartDropdown.style.display = 'none';
+      }
+    });
 
     // Load default menu
     window.onload = () => loadMenu("KFC");
