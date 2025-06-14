@@ -13,8 +13,6 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-sA+e2CGN1tZfdWChcM8LD67WbW1n6TSlFli3eWySQuE="
-    crossorigin=""
   />
 
   <style>
@@ -81,8 +79,6 @@
       padding: 10px;
       display: none;
       z-index: 1000;
-      max-height: calc(100vh - 50px);
-      overflow-y: auto;
     }
 
     .dropdown-title {
@@ -128,8 +124,6 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
-      max-width: 960px;
-      margin: 0 auto 20px auto;
     }
 
     .product {
@@ -143,14 +137,6 @@
       max-width: 100%;
       height: auto;
       border-radius: 8px;
-    }
-
-    .product h3 {
-      margin: 10px 0 5px;
-    }
-
-    .product p {
-      margin: 4px 0;
     }
 
     .logout-btn {
@@ -167,21 +153,13 @@
       background-color: darkred;
     }
 
-    /* Leaflet Map container */
+    /* Leaflet map style */
     #map {
+      width: 100%;
       height: 300px;
-      max-width: 960px;
-      margin: 0 auto 40px auto;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-
-    #location-info {
-      max-width: 960px;
-      margin: 0 auto 40px auto;
-      text-align: center;
-      font-size: 16px;
-      color: #555;
     }
   </style>
 </head>
@@ -215,16 +193,11 @@
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
 
-  <!-- Leaflet Map for location picking -->
+  <!-- Leaflet Map Container -->
   <div id="map"></div>
-  <div id="location-info">Click on the map to select your delivery location.</div>
 
   <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-o9N1j7kN8+Y25EM14v0G0q4csVYl84tz5QhckbMtkIM="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
     // Firebase config
@@ -314,33 +287,21 @@
     }
 
     // Load default menu
-    window.onload = () => loadMenu("KFC");
+    window.onload = () => {
+      loadMenu("KFC");
 
-    // Leaflet map setup for location picking
-    const map = L.map('map').setView([18.0179, -76.8099], 12); // Centered on Jamaica approx.
+      // Initialize Leaflet map after page load
+      const map = L.map('map').setView([18.0179, -76.8099], 12); // Coordinates for Kingston, Jamaica
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map);
 
-    let marker;
-
-    map.on('click', function(e) {
-      const { lat, lng } = e.latlng;
-
-      if (marker) {
-        marker.setLatLng(e.latlng);
-      } else {
-        marker = L.marker(e.latlng).addTo(map);
-      }
-
-      document.getElementById('location-info').textContent =
-        `Selected location: Latitude ${lat.toFixed(5)}, Longitude ${lng.toFixed(5)}`;
-
-      // TODO: Here you can save lat,lng to your cart or order form as needed.
-      console.log('User selected location:', lat, lng);
-    });
+      L.marker([18.0179, -76.8099]).addTo(map)
+        .bindPopup('KRAVIN DELIVERY Location')
+        .openPopup();
+    };
   </script>
 </body>
 </html>
