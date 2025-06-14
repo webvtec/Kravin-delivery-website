@@ -10,7 +10,23 @@
   <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
   <div hidden id="snipcart" 
        data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
-       data-currency="jmd">
+       data-currency="jmd"
+       data-config-add-product-behavior="none"
+       data-config-modal-style="side"
+       data-config-country="JM"
+       data-config-billing-address-required="true"
+       data-config-shipping-address-required="false">
+    <snipcart-fields>
+      <fieldset>
+        <snipcart-input name="name" label="Full name" required></snipcart-input>
+        <snipcart-input name="email" label="Email" required></snipcart-input>
+        <snipcart-input name="address1" label="Street Address" required></snipcart-input>
+        <snipcart-input name="address2" label="Apt/Suite" required></snipcart-input>
+        <snipcart-input name="city" label="City" required></snipcart-input>
+        <snipcart-input name="province" label="Province/State" required></snipcart-input>
+        <input type="hidden" name="country" value="Jamaica" />
+      </fieldset>
+    </snipcart-fields>
   </div>
 
   <!-- Firebase -->
@@ -76,7 +92,8 @@
       top: 50px;
       left: 0;
       width: 250px;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(0, 0, 0, 0.7); /* Dark transparent background */
+      color: white;
       border-right: 1px solid #ccc;
       padding: 10px;
       display: none;
@@ -94,12 +111,12 @@
       display: block;
       padding: 8px;
       font-weight: bold;
-      color: #333;
+      color: white;
       text-decoration: none;
     }
 
     .dropdown a:hover {
-      background: #eee;
+      background: #333;
     }
 
     .user-info {
@@ -117,7 +134,7 @@
 
     .user-info p {
       font-size: 14px;
-      color: #444;
+      color: #ccc;
       margin: 2px 0;
     }
 
@@ -209,7 +226,6 @@
   <div id="product-list">Loading menu...</div>
 
   <script>
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
       authDomain: "kravin-delivery-login.firebaseapp.com",
@@ -221,7 +237,6 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    // Show profile + logout
     firebase.auth().onAuthStateChanged(user => {
       const profile = document.getElementById("user-profile");
       if (user) {
@@ -250,13 +265,11 @@
       });
     }
 
-    // Toggle Menu
     function toggleMenu() {
       const dropdown = document.getElementById("menu-dropdown");
       dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     }
 
-    // Google Sheets setup
     const sheets = {
       KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
       LasVagas: "YOUR_SHEET_ID_2",
@@ -296,14 +309,12 @@
           });
         })
         .catch(() => {
-          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+          container.innerHTML = `<p style="color:red; text-align:center;">\u274C Failed to load menu for ${restaurant}.</p>`;
         });
 
-      // Hide menu after selection
       document.getElementById("menu-dropdown").style.display = "none";
     }
 
-    // Load default menu
     window.onload = () => loadMenu("KFC");
   </script>
 </body>
