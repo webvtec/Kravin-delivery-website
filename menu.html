@@ -2,28 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>KRAVIN DELIVERY</title>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- PayPal SDK: Replace YOUR_PAYPAL_CLIENT_ID below -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
-
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
       padding-top: 80px;
-      overflow-x: hidden;
     }
 
     .top-bar {
@@ -69,19 +61,6 @@
       height: 50px;
       display: flex;
       align-items: center;
-      cursor: pointer;
-    }
-
-    #cart-count {
-      background: red;
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
-      border-radius: 50%;
-      padding: 2px 6px;
-      position: absolute;
-      top: 2px;
-      right: 2px;
     }
 
     .dropdown {
@@ -94,8 +73,6 @@
       padding: 10px;
       display: none;
       z-index: 1000;
-      max-height: calc(100vh - 50px);
-      overflow-y: auto;
     }
 
     .dropdown-title {
@@ -141,16 +118,13 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
-      max-width: 1000px;
-      margin: 0 auto;
     }
 
     .product {
       background: white;
       padding: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       text-align: center;
-      border-radius: 6px;
     }
 
     .product img {
@@ -167,150 +141,18 @@
       margin: 4px 0;
     }
 
-    .add-to-cart-btn {
-      margin-top: 8px;
-      padding: 6px 12px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.2s ease;
-    }
-
-    .add-to-cart-btn:hover {
-      background: darkred;
-    }
-
-    #cart-dropdown {
-      position: fixed;
-      top: 50px;
-      right: 0;
-      width: 320px;
-      max-height: 400px;
-      overflow-y: auto;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      display: none;
-      z-index: 1100;
-      border-radius: 6px 0 0 6px;
-    }
-
-    #cart-dropdown h3 {
-      margin-bottom: 10px;
-      text-align: center;
-    }
-
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 6px;
-      align-items: center;
-    }
-
-    .cart-item p {
-      margin: 0;
-      font-size: 14px;
-      flex: 1;
-    }
-
-    .cart-item .qty {
-      font-weight: bold;
-      margin-left: 5px;
-    }
-
-    .cart-item button {
-      background: none;
-      border: none;
-      color: red;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      padding: 0 4px;
-    }
-
-    #cart-total {
-      font-weight: bold;
-      text-align: right;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    #cart-dropdown button.checkout-btn {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
+    .logout-btn {
       background-color: red;
       color: white;
-      font-weight: bold;
       border: none;
+      padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 16px;
+      margin-top: 10px;
     }
 
-    #cart-dropdown button.checkout-btn:hover {
+    .logout-btn:hover {
       background-color: darkred;
-    }
-
-    /* FULL PAGE MODAL FOR CHECKOUT */
-
-    #checkout-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.75);
-      z-index: 2000;
-      overflow-y: auto;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    #checkout-content {
-      background: white;
-      max-width: 480px;
-      width: 100%;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-      position: relative;
-    }
-
-    #checkout-content h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    #paypal-button-container {
-      margin-top: 20px;
-      display: flex;
-      justify-content: center;
-    }
-
-    #checkout-close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: #888;
-      transition: color 0.2s ease;
-    }
-
-    #checkout-close-btn:hover {
-      color: red;
     }
   </style>
 </head>
@@ -320,9 +162,8 @@
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
 
   <!-- Cart Icon -->
-  <div class="cart-icon" onclick="toggleCart()">
-    🛒
-    <span id="cart-count" style="display:none;">0</span>
+  <div class="cart-icon">
+    <button style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
   </div>
 
   <!-- Top Bar -->
@@ -332,34 +173,18 @@
   <div class="dropdown" id="menu-dropdown">
     <div class="user-info" id="user-profile">Loading profile...</div>
 
+    <!-- Added Title -->
     <div class="dropdown-title">RESTAURANTS</div>
 
-    <a href="#" onclick="loadMenu('KFC'); return false;">KFC</a>
-    <a href="#" onclick="loadMenu('LasVagas'); return false;">Las Vagas</a>
-    <a href="#" onclick="loadMenu('Cloggys'); return false;">Cloggys</a>
-    <a href="#" onclick="loadMenu('Waterloo'); return false;">Waterloo Guesthouse</a>
-    <a href="#" onclick="loadMenu('Tastees'); return false;">Tastees</a>
+    <a href="#" onclick="loadMenu('KFC')">KFC</a>
+    <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
+    <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
+    <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
+    <a href="#" onclick="loadMenu('Tastees')">Tastees</a>
   </div>
 
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
-
-  <!-- Cart Dropdown -->
-  <div id="cart-dropdown">
-    <h3>Your Cart</h3>
-    <div id="cart-items"></div>
-    <div id="cart-total"></div>
-    <button class="checkout-btn" onclick="openCheckout()">Checkout</button>
-  </div>
-
-  <!-- Full page checkout modal -->
-  <div id="checkout-modal" aria-modal="true" role="dialog" aria-labelledby="checkout-title">
-    <div id="checkout-content">
-      <button id="checkout-close-btn" aria-label="Close checkout modal" onclick="closeCheckout()">×</button>
-      <h2 id="checkout-title">Complete Your Payment</h2>
-      <div id="paypal-button-container"></div>
-    </div>
-  </div>
 
   <script>
     // Firebase config
@@ -409,12 +234,6 @@
       dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     }
 
-    // Toggle Cart
-    function toggleCart() {
-      const cartDropdown = document.getElementById("cart-dropdown");
-      cartDropdown.style.display = cartDropdown.style.display === "block" ? "none" : "block";
-    }
-
     // Google Sheets setup
     const sheets = {
       KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
@@ -441,8 +260,7 @@
             product.innerHTML = `
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
-              <p><strong>$${item.Price}</strong></p>
-              <button class="add-to-cart-btn" onclick='addToCart(${JSON.stringify(item)})'>Add to Cart</button>
+              <p><strong>${item.Price}</strong></p>
             `;
             container.appendChild(product);
           });
@@ -455,139 +273,8 @@
       document.getElementById("menu-dropdown").style.display = "none";
     }
 
-    // Cart data
-    let cart = [];
-
-    function addToCart(item) {
-      const existing = cart.find(i => i.Name === item.Name);
-      if (existing) {
-        existing.qty++;
-      } else {
-        cart.push({ ...item, qty: 1, price: parseFloat(item.Price) });
-      }
-      updateCartUI();
-    }
-
-    function updateCartUI() {
-      const cartCount = document.getElementById("cart-count");
-      const cartDropdown = document.getElementById("cart-dropdown");
-      const cartItems = document.getElementById("cart-items");
-      const cartTotal = document.getElementById("cart-total");
-
-      // Update count badge
-      const totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
-      if (totalQty > 0) {
-        cartCount.style.display = "inline-block";
-        cartCount.textContent = totalQty;
-      } else {
-        cartCount.style.display = "none";
-        cartDropdown.style.display = "none"; // hide cart if empty
-      }
-
-      // Render cart items
-      cartItems.innerHTML = "";
-      if (cart.length === 0) {
-        cartItems.innerHTML = "<p>Your cart is empty.</p>";
-        cartTotal.textContent = "";
-        return;
-      }
-
-      cart.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "cart-item";
-        div.innerHTML = `
-          <p>${item.Name} x <span class="qty">${item.qty}</span></p>
-          <p>$${(item.price * item.qty).toFixed(2)}</p>
-          <button onclick="removeFromCart('${item.Name}')">&times;</button>
-        `;
-        cartItems.appendChild(div);
-      });
-
-      // Show total
-      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-      cartTotal.textContent = `Total: $${total.toFixed(2)}`;
-    }
-
-    function removeFromCart(name) {
-      cart = cart.filter(item => item.Name !== name);
-      updateCartUI();
-    }
-
-    // OPEN CHECKOUT MODAL & RENDER PAYPAL BUTTONS
-    function openCheckout() {
-      if (cart.length === 0) {
-        alert("Your cart is empty!");
-        return;
-      }
-
-      const modal = document.getElementById('checkout-modal');
-      modal.style.display = 'flex';
-
-      // Render PayPal buttons with current total
-      renderPayPalButtons();
-    }
-
-    // CLOSE CHECKOUT MODAL
-    function closeCheckout() {
-      const modal = document.getElementById('checkout-modal');
-      modal.style.display = 'none';
-
-      // Remove PayPal buttons (clear container)
-      const container = document.getElementById('paypal-button-container');
-      container.innerHTML = '';
-    }
-
-    // RENDER PAYPAL BUTTONS DYNAMICALLY EACH TIME
-    function renderPayPalButtons() {
-      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
-
-      paypal.Buttons({
-        createOrder: function (data, actions) {
-          return actions.order.create({
-            purchase_units: [{
-              amount: {
-                value: total
-              },
-              description: "KRAVIN DELIVERY Order"
-            }]
-          });
-        },
-        onApprove: function (data, actions) {
-          return actions.order.capture().then(function (details) {
-            alert('Transaction completed by ' + details.payer.name.given_name + '!');
-
-            // Clear cart
-            cart = [];
-            updateCartUI();
-
-            // Close modal
-            closeCheckout();
-
-            // Close cart dropdown if open
-            document.getElementById('cart-dropdown').style.display = 'none';
-          });
-        },
-        onCancel: function () {
-          alert('Payment cancelled.');
-          closeCheckout();
-        },
-        onError: function (err) {
-          console.error(err);
-          alert('An error occurred during the transaction.');
-          closeCheckout();
-        },
-        style: {
-          layout: 'vertical',
-          color: 'blue',
-          shape: 'rect',
-          label: 'paypal'
-        }
-      }).render('#paypal-button-container');
-    }
-
-    // Load initial menu (e.g., KFC)
-    loadMenu('KFC');
-
+    // Load default menu
+    window.onload = () => loadMenu("KFC");
   </script>
 </body>
 </html>
