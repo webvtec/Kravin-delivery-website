@@ -8,15 +8,66 @@
   <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
   <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
   <div hidden id="snipcart" data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky"></div>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       background: #f7f7f7;
+      margin: 0;
+    }
+
+    /* Navigation Menu */
+    .nav {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 999;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown button {
+      background-color: #333;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      border-radius: 5px;
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: black;
+      padding: 10px 15px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
     }
 
     h1 {
       text-align: center;
+      margin-top: 50px;
     }
 
     #product-list {
@@ -64,12 +115,27 @@
   </style>
 </head>
 <body>
+
+  <!-- MENU TAB -->
+  <div class="nav">
+    <div class="dropdown">
+      <button>Menu</button>
+      <div class="dropdown-content">
+        <a href="kfc.html">KFC</a>
+        <a href="lasvagas.html">Las Vagas</a>
+        <a href="cloggys.html">Cloggys</a>
+        <a href="waterloo.html">Waterloo Guesthouse</a>
+        <a href="tastees.html">Tastees</a>
+      </div>
+    </div>
+  </div>
+
   <h1>Kravin Menu</h1>
   <div id="product-list">Loading menu...</div>
 
   <script>
     const sheetId = "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA";
-    const sheetName = "Sheet1"; // change if needed
+    const sheetName = "Sheet1";
     const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
     fetch(sheetUrl)
