@@ -1,301 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>KRAVIN DELIVERY</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KRAVIN DELIVERY</title>
 
-  <!-- Snipcart -->
-  <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
-  <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
-  <div hidden id="snipcart" 
-       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
-       data-currency="jmd">
-  </div>
+  <!-- Snipcart CSS & JS -->
+  <link
+    href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css"
+    rel="stylesheet"
+  />
+  <script
+    async
+    src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"
+  ></script>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <div
+    hidden
+    id="snipcart"
+    data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky"
+    data-currency="jmd"
+  ></div>
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      padding-top: 80px;
-    }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    .top-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: red;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      padding-top: 80px;
+    }
 
-    .top-bar h1 {
-      color: white;
-      font-size: 20px;
-    }
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: red;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
 
-    .menu-icon {
-      position: fixed;
-      top: 0;
-      left: 0;
-      font-size: 28px;
-      cursor: pointer;
-      background: white;
-      padding: 8px 12px;
-      z-index: 1001;
-      height: 50px;
-      display: flex;
-      align-items: center;
-    }
+    .top-bar h1 {
+      color: white;
+      font-size: 20px;
+    }
 
-    .cart-icon {
-      position: fixed;
-      top: 0;
-      right: 0;
-      font-size: 28px;
-      background: white;
-      padding: 8px 12px;
-      z-index: 1001;
-      height: 50px;
-      display: flex;
-      align-items: center;
-    }
+    .menu-icon {
+      position: fixed;
+      top: 0;
+      left: 0;
+      font-size: 28px;
+      cursor: pointer;
+      background: white;
+      padding: 8px 12px;
+      z-index: 1001;
+      height: 50px;
+      display: flex;
+      align-items: center;
+    }
 
-    .dropdown {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 250px;
-      background: rgba(255, 255, 255, 0.9);
-      border-right: 1px solid #ccc;
-      padding: 10px;
-      display: none;
-      z-index: 1000;
-      height: calc(100vh - 50px);
-      overflow-y: auto;
-    }
+    .cart-icon {
+      position: fixed;
+      top: 0;
+      right: 0;
+      font-size: 28px;
+      background: white;
+      padding: 8px 12px;
+      z-index: 1001;
+      height: 50px;
+      display: flex;
+      align-items: center;
+    }
 
-    .dropdown a {
-      display: block;
-      padding: 8px;
-      font-weight: bold;
-      color: #333;
-      text-decoration: none;
-    }
+    .dropdown {
+      position: fixed;
+      top: 50px;
+      left: 0;
+      width: 250px;
+      background: rgba(255, 255, 255, 0.9);
+      border-right: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      z-index: 1000;
+      height: calc(100vh - 50px);
+      overflow-y: auto;
+    }
 
-    .dropdown a:hover {
-      background: #eee;
-    }
+    .dropdown a {
+      display: block;
+      padding: 8px;
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+    }
 
-    .user-info {
-      text-align: center;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ccc;
-    }
+    .dropdown a:hover {
+      background: #eee;
+    }
 
-    .user-info img {
-      width: 60px;
-      border-radius: 50%;
-      margin-bottom: 8px;
-    }
+    .user-info {
+      text-align: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+    }
 
-    .user-info p {
-      font-size: 14px;
-      color: #444;
-      margin: 2px 0;
-    }
+    .user-info img {
+      width: 60px;
+      border-radius: 50%;
+      margin-bottom: 8px;
+    }
 
-    #product-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
-      padding: 10px;
-    }
+    .user-info p {
+      font-size: 14px;
+      color: #444;
+      margin: 2px 0;
+    }
 
-    .product {
-      background: white;
-      padding: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      text-align: center;
-    }
+    #product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      padding: 10px;
+    }
 
-    .product img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
+    .product {
+      background: white;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
 
-    .product h3 {
-      margin: 10px 0 5px;
-    }
+    .product img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
 
-    .product p {
-      margin: 4px 0;
-    }
+    .product h3 {
+      margin: 10px 0 5px;
+    }
 
-    .snipcart-add-item {
-      background-color: #ff6600;
-      color: white;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
+    .product p {
+      margin: 4px 0;
+    }
 
-    .snipcart-add-item:hover {
-      background-color: #e65c00;
-    }
+    .snipcart-add-item {
+      background-color: #ff6600;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
 
-    .logout-btn {
-      background-color: red;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+    .snipcart-add-item:hover {
+      background-color: #e65c00;
+    }
 
-    .logout-btn:hover {
-      background-color: darkred;
-    }
-  </style>
+    .logout-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .logout-btn:hover {
+      background-color: darkred;
+    }
+  </style>
 </head>
 <body>
+  <!-- Menu Icon -->
+  <div class="menu-icon" onclick="toggleMenu()">☰</div>
 
-  <!-- Menu Icon -->
-  <div class="menu-icon" onclick="toggleMenu()">☰</div>
+  <!-- Cart Icon -->
+  <div class="cart-icon">
+    <button
+      class="snipcart-checkout"
+      style="background: none; border: none; font-size: 24px; cursor: pointer;"
+    >
+      🛒
+    </button>
+  </div>
 
-  <!-- Cart Icon -->
-  <div class="cart-icon">
-    <button class="snipcart-checkout" style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
-  </div>
+  <!-- Top Bar -->
+  <div class="top-bar"><h1>KRAVIN DELIVERY</h1></div>
 
-  <!-- Top Bar -->
-  <div class="top-bar"><h1>KRAVIN DELIVERY</h1></div>
+  <!-- Dropdown Menu -->
+  <div class="dropdown" id="menu-dropdown">
+    <div class="user-info" id="user-profile">Loading profile...</div>
+    <a href="#" onclick="loadMenu('KFC')">KFC</a>
+    <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
+    <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
+    <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
+    <a href="#" onclick="loadMenu('Tastees')">Tastees</a>
+  </div>
 
-  <!-- Dropdown Menu -->
-  <div class="dropdown" id="menu-dropdown">
-    <div class="user-info" id="user-profile">Loading profile...</div>
-    <a href="#" onclick="loadMenu('KFC')">KFC</a>
-    <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
-    <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
-    <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
-    <a href="#" onclick="loadMenu('Tastees')">Tastees</a>
-  </div>
+  <!-- Product Grid -->
+  <div id="product-list">Loading menu...</div>
 
-  <!-- Product Grid -->
-  <div id="product-list">Loading menu...</div>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+      authDomain: "kravin-delivery-login.firebaseapp.com",
+      projectId: "kravin-delivery-login",
+      storageBucket: "kravin-delivery-login.appspot.com",
+      messagingSenderId: "1035748923136",
+      appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5",
+    };
 
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-      authDomain: "kravin-delivery-login.firebaseapp.com",
-      projectId: "kravin-delivery-login",
-      storageBucket: "kravin-delivery-login.appspot.com",
-      messagingSenderId: "1035748923136",
-      appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
-    };
+    firebase.initializeApp(firebaseConfig);
 
-    firebase.initializeApp(firebaseConfig);
+    // Show profile + logout
+    firebase.auth().onAuthStateChanged((user) => {
+      const profile = document.getElementById("user-profile");
+      if (user) {
+        const name = user.displayName || user.email.split("@")[0];
+        const email = user.email;
+        const date = new Date(user.metadata.creationTime).toLocaleDateString();
+        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          name
+        )}&background=random`;
 
-    // Show profile + logout
-    firebase.auth().onAuthStateChanged(user => {
-      const profile = document.getElementById("user-profile");
-      if (user) {
-        const name = user.displayName || user.email.split('@')[0];
-        const email = user.email;
-        const date = new Date(user.metadata.creationTime).toLocaleDateString();
-        const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+        profile.innerHTML = `
+          <img src="${avatar}" alt="avatar" />
+          <p><strong>${name}</strong></p>
+          <p>${email}</p>
+          <p>Joined: ${date}</p>
+          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        `;
+      } else {
+        profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
+      }
+    });
 
-        profile.innerHTML = `
-          <img src="${avatar}" alt="avatar" />
-          <p><strong>${name}</strong></p>
-          <p>${email}</p>
-          <p>Joined: ${date}</p>
-          <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-        `;
-      } else {
-        profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-      }
-    });
+    function logout() {
+      firebase
+        .auth()
+        .signOut()
+        .then(() => {
+          window.location.href = "login.html";
+        })
+        .catch((error) => {
+          alert("Logout failed: " + error.message);
+        });
+    }
 
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "login.html";
-      }).catch(error => {
-        alert("Logout failed: " + error.message);
-      });
-    }
+    // Toggle Menu
+    function toggleMenu() {
+      const dropdown = document.getElementById("menu-dropdown");
+      dropdown.style.display =
+        dropdown.style.display === "block" ? "none" : "block";
+    }
 
-    // Toggle Menu
-    function toggleMenu() {
-      const dropdown = document.getElementById("menu-dropdown");
-      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    }
+    // Google Sheets setup (replace YOUR_SHEET_ID_X with actual IDs)
+    const sheets = {
+      KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
+      LasVagas: "YOUR_SHEET_ID_2",
+      Cloggys: "YOUR_SHEET_ID_3",
+      Waterloo: "YOUR_SHEET_ID_4",
+      Tastees: "YOUR_SHEET_ID_5",
+    };
+    const sheetName = "Sheet1";
 
-    // Google Sheets setup
-    const sheets = {
-      KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
-      LasVagas: "YOUR_SHEET_ID_2",
-      Cloggys: "YOUR_SHEET_ID_3",
-      Waterloo: "YOUR_SHEET_ID_4",
-      Tastees: "YOUR_SHEET_ID_5"
-    };
-    const sheetName = "Sheet1";
+    function loadMenu(restaurant) {
+      const sheetId = sheets[restaurant];
+      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+      const container = document.getElementById("product-list");
+      container.innerHTML = "Loading menu...";
 
-    function loadMenu(restaurant) {
-      const sheetId = sheets[restaurant];
-      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-      const container = document.getElementById("product-list");
-      container.innerHTML = "Loading menu...";
+      fetch(sheetUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          container.innerHTML = "";
+          data.forEach((item) => {
+            const product = document.createElement("div");
+            product.className = "product";
+            product.innerHTML = `
+              <img src="${item.Image}" alt="${item.Name}" />
+              <h3>${item.Name}</h3>
+              <p><strong>${item.Price}</strong></p>
+              <button class="snipcart-add-item"
+                data-item-id="${item.Name}"
+                data-item-name="${item.Name}"
+                data-item-price="${item.Price.replace(/[^0-9.]/g, '')}"
+                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
+                data-item-image="${item.Image}">
+                Add to Cart
+              </button>
+            `;
+            container.appendChild(product);
+          });
+        })
+        .catch(() => {
+          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+        });
 
-      fetch(sheetUrl)
-        .then(res => res.json())
-        .then(data => {
-          container.innerHTML = "";
-          data.forEach(item => {
-            const product = document.createElement("div");
-            product.className = "product";
-            product.innerHTML = `
-              <img src="${item.Image}" alt="${item.Name}" />
-              <h3>${item.Name}</h3>
-              <p><strong>${item.Price}</strong></p>
-              <button class="snipcart-add-item"
-                data-item-id="${item.Name}"
-                data-item-name="${item.Name}"
-                data-item-price="${item.Price.replace(/[^0-9.]/g, '')}"
-                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
-                data-item-image="${item.Image}">
-                Add to Cart
-              </button>
-            `;
-            container.appendChild(product);
-          });
-        })
-        .catch(() => {
-          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-        });
+      // Hide menu after selection
+      document.getElementById("menu-dropdown").style.display = "none";
+    }
 
-      // Hide menu after selection
-      document.getElementById("menu-dropdown").style.display = "none";
-    }
+    // Delivery locations and fees
+    const deliveryLocations = {
+      brompton: { label: "Brompton lane ($2,000)", fee: 2000 },
+      blackriver: { label: "Black River Square ($1,500)", fee: 1500 },
+      luana: { label: "Luana ($2,300)", fee: 2300 },
+      sandyground: { label: "Sandy Ground ($2,000)", fee: 2000 },
+    };
 
-    // Load default menu
-    window.onload = () => loadMenu("KFC");
-  </script>
+    // When Snipcart is ready, setup custom fields and events
+    document.addEventListener("snipcart.ready", () => {
+      // Register delivery location dropdown
+      Snipcart.api.fields.registerCustomField({
+        id: "delivery-location",
+        name: "Delivery Location",
+        type: "select",
+        options: Object.entries(deliveryLocations).map(([key, loc]) => ({
+          value: key,
+          label: loc.label,
+        })),
+        required: true,
+      });
+
+      const deliveryFeeItemId = "delivery-fee";
+
+      // Update delivery fee in cart when custom field changes
+      Snipcart.events.on("cart.changed", () => {
+        const cart = Snipcart.api.cart.get();
+        const customField = cart.customFields.find(
+          (f) => f.name === "Delivery Location"
+        );
+        const selectedLocation = customField ? customField.value : null;
+        const fee =
+          selectedLocation && deliveryLocations[selectedLocation]
+            ? deliveryLocations[selectedLocation].fee
+            : 0;
+
+        // Remove existing delivery fee item if present
+        const existingFeeItem = cart.items.find(
+          (i) => i.id === deliveryFeeItemId
+        );
+        if (existingFeeItem) {
+          Snipcart.api.cart.items.remove(existingFeeItem.id);
+        }
+
+        // Add delivery fee item if fee > 0
+        if (fee > 0) {
+          Snipcart.api.cart.items.add({
+            id: deliveryFeeItemId,
+            name: "Delivery Fee",
+            price: fee,
+            quantity: 1,
+            url: window.location.href,
+          });
+        }
+      });
+
+      // Send order details to WhatsApp after checkout
+      Snipcart.events.on("order.completed", (order) => {
+        const name = order.billingAddressName || "Customer";
+        const phone = order.billingAddressPhone || "";
+        const address = order.billingAddress1 || "";
+        const items = order.items
+          .map((item) => `${item.name} x${item.quantity}`)
+          .join(", ");
+        const total = order.total.toFixed(2);
+
+        const message = `New Order:
+Name: ${name}
+Phone: ${phone}
+Address: ${address}
+Items: ${items}
+Total: $${total}`;
+
+        const encodedMsg = encodeURIComponent(message);
+        const whatsappNumber = "18763422293"; // Your WhatsApp number without spaces/dashes
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodedMsg}`, "_blank");
+      });
+    });
+
+    // Load default menu on page load
+    window.onload = () => loadMenu("KFC");
+  </script>
 </body>
 </html>
