@@ -5,127 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>KRAVIN DELIVERY</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    #menu-buttons button {
-      margin: 5px;
-      padding: 10px 15px;
-      cursor: pointer;
-    }
-    #product-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-    }
-    .product {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      width: 180px;
-      padding: 10px;
-      text-align: center;
-    }
-    .product img {
-      max-width: 100%;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-    .product button {
-      margin-top: 10px;
-      background: #0070ba;
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #cart-icon {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      cursor: pointer;
-      background: #0070ba;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 50px;
-      font-weight: bold;
-      user-select: none;
-    }
-    #cart-count {
-      background: red;
-      border-radius: 50%;
-      padding: 3px 7px;
-      font-size: 12px;
-      vertical-align: super;
-      margin-left: 5px;
-      display: inline-block;
-    }
-    #cart-dropdown {
-      position: fixed;
-      top: 60px;
-      right: 20px;
-      background: white;
-      border: 1px solid #ccc;
-      width: 300px;
-      max-height: 400px;
-      overflow-y: auto;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      display: none;
-      border-radius: 8px;
-      padding: 15px;
-      z-index: 999;
-    }
-    #cart-dropdown div.cart-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    #cart-dropdown div.cart-item img {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 5px;
-      margin-right: 10px;
-    }
-    #cart-dropdown div.cart-item .info {
-      flex-grow: 1;
-    }
-    #cart-dropdown div.cart-item button.remove-item {
+    /* Your existing CSS here */
+
+    /* Minimal styling for remove button in cart */
+    #cart-items button.remove-item {
       background: red;
       border: none;
       color: white;
+      cursor: pointer;
       font-weight: bold;
+      padding: 0 8px;
+      margin-left: 10px;
       border-radius: 4px;
-      cursor: pointer;
-      padding: 4px 8px;
-    }
-    #checkout-btn {
-      width: 100%;
-      padding: 10px;
-      background: green;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 5px;
-      margin-top: 10px;
     }
 
-    /* Checkout Modal */
+    /* PAY UPON ARRIVAL button style */
+    #pay-upon-arrival-btn {
+      background-color: #25D366;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    #pay-upon-arrival-btn:hover {
+      background-color: #1ebe5d;
+    }
+
+    /* Checkout modal style */
     #checkout-modal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
       justify-content: center;
       align-items: center;
       z-index: 1000;
@@ -135,232 +50,209 @@
       padding: 20px;
       border-radius: 8px;
       width: 320px;
+      max-width: 90%;
       box-sizing: border-box;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    #checkout-modal label {
-      display: block;
-      margin-bottom: 8px;
-    }
-    #checkout-modal input, #checkout-modal textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-      resize: vertical;
-    }
-    #pay-upon-arrival-btn {
-      background-color: #25D366;
-      color: white;
-      border: none;
-      padding: 10px;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 4px;
-      width: 100%;
-      margin-bottom: 10px;
-    }
-    #pay-upon-arrival-btn:hover {
-      background-color: #1ebe5d;
-    }
-    #paypal-button-container {
-      margin-top: 10px;
-    }
-    #close-checkout-btn {
-      margin-top: 15px;
-      background: #aaa;
-      border: none;
-      color: white;
-      padding: 10px;
-      cursor: pointer;
-      width: 100%;
-      border-radius: 4px;
-    }
-    #form-error {
-      color: red;
-      display: none;
-      margin-bottom: 10px;
-    }
-    #payment-success {
-      color: green;
-      display: none;
-      margin-top: 10px;
-      text-align: center;
     }
   </style>
 </head>
 <body>
+  <!-- Your existing HTML content -->
 
-  <h1>KRAVIN DELIVERY</h1>
+  <!-- Cart icon and dropdown, menu dropdown, etc. assumed here -->
 
-  <div id="menu-buttons">
-    <button onclick="loadMenu('KFC')">KFC</button>
-    <!-- Add other restaurants similarly -->
-  </div>
-
+  <!-- Product list container -->
   <div id="product-list"></div>
 
-  <div id="cart-icon" onclick="toggleCart()">
-    Cart <span id="cart-count" style="display:none;">0</span>
+  <!-- Cart dropdown -->
+  <div id="cart-dropdown" style="display:none; position:absolute; top:50px; right:10px; background:#fff; border:1px solid #ccc; width:300px; max-height:400px; overflow-y:auto; z-index:100;">
+    <div id="cart-items"><p>Your cart is empty.</p></div>
+    <button id="checkout-btn" style="display:none; width:100%; padding:10px; background:blue; color:white; border:none; cursor:pointer; margin-top:10px;" onclick="openCheckout()">Checkout</button>
   </div>
 
-  <div id="cart-dropdown">
-    <div id="cart-items">
-      <p>Your cart is empty.</p>
-    </div>
-    <button id="checkout-btn" onclick="openCheckout()" style="display:none;">Checkout</button>
+  <!-- Menu dropdown -->
+  <div id="menu-dropdown" style="display:none; position:absolute; top:50px; left:10px; background:#fff; border:1px solid #ccc; width:200px; z-index:100;">
+    <button onclick="loadMenu('KFC')">KFC</button>
+    <button onclick="loadMenu('LasVagas')">LasVagas</button>
+    <button onclick="loadMenu('Cloggys')">Cloggys</button>
+    <button onclick="loadMenu('Waterloo')">Waterloo</button>
+    <button onclick="loadMenu('Tastees')">Tastees</button>
   </div>
 
   <!-- Checkout Modal -->
   <div id="checkout-modal">
     <div>
       <h2>Checkout</h2>
-      <form id="checkout-form" onsubmit="return false;">
-        <label>Name:
+      <form id="checkout-form">
+        <label>
+          Name:<br />
           <input type="text" name="name" required />
-        </label>
-        <label>Phone:
+        </label><br /><br />
+        <label>
+          Phone:<br />
           <input type="tel" name="phone" required />
-        </label>
-        <label>Address:
-          <textarea name="address" rows="3" required></textarea>
-        </label>
+        </label><br /><br />
+        <label>
+          Address:<br />
+          <textarea name="address" required></textarea>
+        </label><br />
 
-        <button type="button" id="pay-upon-arrival-btn">PAY UPON ARRIVAL</button>
+        <!-- PAY UPON ARRIVAL button -->
+        <button type="button" id="pay-upon-arrival-btn">PAY UPON ARRIVAL</button><br /><br />
 
-        <div id="form-error"></div>
+        <div id="form-error" style="color:red; display:none; margin-bottom:10px;"></div>
 
+        <!-- PayPal Buttons container -->
         <div id="paypal-button-container"></div>
 
-        <button type="button" id="close-checkout-btn">Cancel</button>
+        <button type="button" id="close-checkout-btn" style="margin-top:10px;">Cancel</button>
       </form>
 
-      <div id="payment-success">Payment successful! Thank you for your order.</div>
+      <div id="payment-success" style="display:none; color:green; margin-top:10px;">
+        Payment successful! Thank you for your order.
+      </div>
     </div>
   </div>
 
-  <!-- PayPal SDK -->
+  <!-- Include PayPal SDK (replace YOUR_PAYPAL_CLIENT_ID) -->
   <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
   <script>
-    // Sample Google Sheet ID for KFC menu (replace with your own sheet ID)
+    // Toggle Menu
+    function toggleMenu() {
+      const dropdown = document.getElementById("menu-dropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    // Google Sheets setup
     const sheets = {
-      KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA"
+      KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
+      LasVagas: "YOUR_SHEET_ID_2",
+      Cloggys: "YOUR_SHEET_ID_3",
+      Waterloo: "YOUR_SHEET_ID_4",
+      Tastees: "YOUR_SHEET_ID_5"
     };
     const sheetName = "Sheet1";
 
-    const productList = document.getElementById("product-list");
-    const cartIcon = document.getElementById("cart-icon");
-    const cartCount = document.getElementById("cart-count");
-    const cartDropdown = document.getElementById("cart-dropdown");
-    const cartItemsElem = document.getElementById("cart-items");
-    const checkoutBtn = document.getElementById("checkout-btn");
-
-    const checkoutModal = document.getElementById("checkout-modal");
-    const checkoutForm = document.getElementById("checkout-form");
-    const formError = document.getElementById("form-error");
-    const paymentSuccess = document.getElementById("payment-success");
-    const closeCheckoutBtn = document.getElementById("close-checkout-btn");
-    const payUponArrivalBtn = document.getElementById("pay-upon-arrival-btn");
-
-    let cart = [];
-
-    // Load menu from Google Sheets
     function loadMenu(restaurant) {
-      productList.innerHTML = "<p>Loading menu...</p>";
       const sheetId = sheets[restaurant];
-      if (!sheetId) {
-        productList.innerHTML = "<p>No menu found for this restaurant.</p>";
-        return;
-      }
-      fetch(`https://opensheet.elk.sh/${sheetId}/${sheetName}`)
+      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+      const container = document.getElementById("product-list");
+      container.innerHTML = "Loading menu...";
+
+      fetch(sheetUrl)
         .then(res => res.json())
         .then(data => {
-          productList.innerHTML = "";
+          container.innerHTML = "";
           data.forEach(item => {
-            const productDiv = document.createElement("div");
-            productDiv.className = "product";
-            productDiv.innerHTML = `
+            const product = document.createElement("div");
+            product.className = "product";
+            product.innerHTML = `
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
               <p><strong>${item.Price}</strong></p>
               <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
             `;
-            productList.appendChild(productDiv);
+            container.appendChild(product);
           });
         })
         .catch(() => {
-          productList.innerHTML = "<p style='color:red;'>Failed to load menu.</p>";
+          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
         });
+
+      // Hide menu after selection
+      document.getElementById("menu-dropdown").style.display = "none";
     }
 
+    // Cart management
+    const cart = [];
+
     function addToCart(name, price, image) {
-      const existing = cart.find(item => item.name === name);
+      const existing = cart.find(i => i.name === name);
       if (existing) {
-        existing.quantity++;
+        existing.quantity += 1;
       } else {
         cart.push({ name, price, image, quantity: 1 });
       }
       updateCartUI();
     }
 
-    function removeFromCart(name) {
-      cart = cart.filter(item => item.name !== name);
-      updateCartUI();
-    }
-
     function updateCartUI() {
+      const countElem = document.getElementById("cart-count");
+      const cartItemsElem = document.getElementById("cart-items");
+      const checkoutBtn = document.getElementById("checkout-btn");
+
+      // Update badge count
+      const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalQuantity > 0) {
+        countElem.style.display = "inline-block";
+        countElem.textContent = totalQuantity;
+        checkoutBtn.style.display = "block";
+      } else {
+        countElem.style.display = "none";
+        checkoutBtn.style.display = "none";
+      }
+
+      // Show items in dropdown
       if (cart.length === 0) {
         cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-        cartCount.style.display = "none";
-        checkoutBtn.style.display = "none";
-      } else {
-        cartItemsElem.innerHTML = "";
-        cart.forEach(item => {
-          const div = document.createElement("div");
-          div.className = "cart-item";
-          div.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" />
-            <div class="info">
-              <strong>${item.name}</strong><br/>
-              ${item.price} x ${item.quantity}
-            </div>
-            <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
-          `;
-          cartItemsElem.appendChild(div);
-        });
-        const totalQty = cart.reduce((acc, cur) => acc + cur.quantity, 0);
-        cartCount.style.display = "inline-block";
-        cartCount.textContent = totalQty;
-        checkoutBtn.style.display = "block";
+        return;
+      }
+
+      cartItemsElem.innerHTML = "";
+      cart.forEach(item => {
+        const itemDiv = document.createElement("div");
+        itemDiv.style.display = "flex";
+        itemDiv.style.alignItems = "center";
+        itemDiv.style.marginBottom = "10px";
+
+        itemDiv.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; border-radius:5px; margin-right:10px;" />
+          <div style="flex-grow:1;">
+            <strong>${item.name}</strong><br/>
+            ${item.price} x ${item.quantity}
+          </div>
+          <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
+        `;
+
+        cartItemsElem.appendChild(itemDiv);
+      });
+    }
+
+    function removeFromCart(name) {
+      const index = cart.findIndex(i => i.name === name);
+      if (index > -1) {
+        cart.splice(index, 1);
+        updateCartUI();
       }
     }
 
     function toggleCart() {
-      if (cartDropdown.style.display === "block") {
-        cartDropdown.style.display = "none";
-      } else {
-        cartDropdown.style.display = "block";
-      }
+      const dropdown = document.getElementById("cart-dropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     }
 
-    // Close cart if click outside
-    window.addEventListener("click", function(event) {
+    // Close cart dropdown if click outside
+    document.addEventListener('click', function(event) {
+      const cartDropdown = document.getElementById('cart-dropdown');
+      const cartIcon = document.querySelector('.cart-icon');
       if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-        cartDropdown.style.display = "none";
+        cartDropdown.style.display = 'none';
       }
     });
 
-    // Checkout modal open/close
+    // Load default menu
+    window.onload = () => {
+      loadMenu("KFC");
+      updateCartUI();
+    };
+
+    // CHECKOUT MODAL LOGIC
+    const checkoutModal = document.getElementById("checkout-modal");
+    const checkoutForm = document.getElementById("checkout-form");
+    const formError = document.getElementById("form-error");
+    const paymentSuccess = document.getElementById("payment-success");
+
     function openCheckout() {
-      if (cart.length === 0) {
-        alert("Your cart is empty.");
-        return;
-      }
       formError.style.display = "none";
       paymentSuccess.style.display = "none";
       checkoutForm.style.display = "block";
@@ -376,9 +268,9 @@
       document.getElementById("paypal-button-container").innerHTML = "";
     }
 
-    closeCheckoutBtn.addEventListener("click", closeCheckout);
+    document.getElementById("close-checkout-btn").addEventListener("click", closeCheckout);
 
-    // Calculate total order price
+    // Calculate total amount in USD (assuming prices have $ sign and decimals)
     function calculateTotal() {
       let total = 0;
       cart.forEach(item => {
@@ -390,16 +282,21 @@
       return total.toFixed(2);
     }
 
-    // Render PayPal buttons inside modal
+    // Render PayPal buttons after validation
     function renderPayPalButtons() {
       const container = document.getElementById("paypal-button-container");
-      container.innerHTML = ""; // Clear previous buttons
+      container.innerHTML = "";
 
       paypal.Buttons({
-        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
+        style: {
+          layout: 'vertical',
+          color:  'gold',
+          shape:  'rect',
+          label:  'paypal'
+        },
         onClick: function(data, actions) {
           if (!checkoutForm.checkValidity()) {
-            formError.textContent = "Please fill out all required fields.";
+            formError.textContent = "Please fill out all required fields correctly.";
             formError.style.display = "block";
             return actions.reject();
           }
@@ -407,9 +304,12 @@
           return actions.resolve();
         },
         createOrder: function(data, actions) {
+          const total = calculateTotal();
           return actions.order.create({
             purchase_units: [{
-              amount: { value: calculateTotal() },
+              amount: {
+                value: total
+              },
               description: "KRAVIN DELIVERY order"
             }]
           });
@@ -418,7 +318,11 @@
           return actions.order.capture().then(function(details) {
             paymentSuccess.style.display = "block";
             checkoutForm.style.display = "none";
-            cart = [];
+
+            // Here you can send order info to your backend or database
+
+            // Clear cart after payment success
+            cart.length = 0;
             updateCartUI();
           });
         },
@@ -426,14 +330,14 @@
           formError.textContent = "Payment failed: " + err;
           formError.style.display = "block";
         }
-      }).render('#paypal-button-container');
+      }).render("#paypal-button-container");
     }
 
-    // PAY UPON ARRIVAL button handler
-    payUponArrivalBtn.addEventListener("click", function() {
-      const name = checkoutForm.elements["name"].value.trim();
-      const phone = checkoutForm.elements["phone"].value.trim();
-      const address = checkoutForm.elements["address"].value.trim();
+    // PAY UPON ARRIVAL button click handler
+    document.getElementById('pay-upon-arrival-btn').addEventListener('click', function() {
+      const name = checkoutForm.elements['name'].value.trim();
+      const phone = checkoutForm.elements['phone'].value.trim();
+      const address = checkoutForm.elements['address'].value.trim();
 
       if (!name || !phone || !address) {
         formError.textContent = "Please fill out name, phone, and address.";
@@ -442,27 +346,22 @@
       }
       formError.style.display = "none";
 
-      let message = "KRAVIN DELIVERY Order:%0A";
+      // Compose order message for WhatsApp
+      let message = `KRAVIN DELIVERY Order:%0A`;
       cart.forEach(item => {
         message += `- ${item.name} x${item.quantity} (${item.price})%0A`;
       });
       message += `%0ATotal: $${calculateTotal()}%0A%0A`;
       message += `Name: ${name}%0APhone: ${phone}%0AAddress: ${address}`;
 
-      // Change this to your WhatsApp number in international format without plus sign
-      const whatsappNumber = "1234567890";
+      // Replace with your WhatsApp number (international format, no plus or spaces)
+      const whatsappNumber = "1234567890"; // <-- REPLACE this
 
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
       window.open(whatsappUrl, "_blank");
 
       closeCheckout();
     });
-
-    // Load default menu on page load
-    window.onload = () => {
-      loadMenu("KFC");
-      updateCartUI();
-    };
   </script>
 </body>
 </html>
