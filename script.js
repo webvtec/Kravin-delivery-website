@@ -4,7 +4,7 @@ const sheetName = "Sheet1"; // Change if your sheet tab name is different
 const menuContainer = document.getElementById("menu-container");
 
 async function fetchMenu() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=YOUR_GOOGLE_API_KEY`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyBzL1oenc86BspfTE8tsFfiOHrP0wnu6Co`;
 
   try {
     const response = await fetch(url);
