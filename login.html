@@ -57,6 +57,7 @@
   <button id="googleSignInBtn">Sign in with Google</button>
 
   <script>
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
       authDomain: "kravin-delivery-login.firebaseapp.com",
@@ -66,13 +67,18 @@
       appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
     };
 
+    // Initialize Firebase app and auth
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // Sign In
+    // Email Sign In
     document.getElementById("emailSignInBtn").addEventListener("click", () => {
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           window.location.href = "menu.html";
@@ -80,10 +86,14 @@
         .catch(e => alert("Login error: " + e.message));
     });
 
-    // Sign Up
+    // Email Sign Up
     document.getElementById("signupBtn").addEventListener("click", () => {
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
       auth.createUserWithEmailAndPassword(email, password)
         .then(() => {
           alert("Sign-up successful! Logging you in...");
@@ -102,7 +112,7 @@
         .catch(e => alert("Google login error: " + e.message));
     });
 
-    // Auto-redirect if already logged in
+    // Auto redirect if user already logged in
     auth.onAuthStateChanged(user => {
       if (user) {
         window.location.href = "menu.html";
