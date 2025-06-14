@@ -81,8 +81,13 @@
       padding: 10px;
       display: none;
       z-index: 1000;
-      height: calc(100vh - 50px);
-      overflow-y: auto;
+    }
+
+    .dropdown-title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      margin: 10px 0;
     }
 
     .dropdown a {
@@ -189,6 +194,10 @@
   <!-- Dropdown Menu -->
   <div class="dropdown" id="menu-dropdown">
     <div class="user-info" id="user-profile">Loading profile...</div>
+
+    <!-- Added Title -->
+    <div class="dropdown-title">RESTAURANTS</div>
+
     <a href="#" onclick="loadMenu('KFC')">KFC</a>
     <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
     <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
