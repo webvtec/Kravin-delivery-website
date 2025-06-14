@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Delivery Site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&display=swap">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: none;
+      background: #333;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    .google-btn {
+      background: #db4437;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>Welcome</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="emailLogin()">Login with Email</button>
+    <button onclick="googleLogin()" class="google-btn">Login with Google</button>
+  </div>
+
+  <script>
+    // TODO: Replace with your own Firebase config
+    const firebaseConfig = {
+  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+  authDomain: "kravin-delivery-login.firebaseapp.com",
+  projectId: "kravin-delivery-login",
+  storageBucket: "kravin-delivery-login.firebasestorage.app",
+  messagingSenderId: "1035748923136",
+  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
+};
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+
+    // Login with Email/Password
+    function emailLogin() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => window.location.href = "menu.html")
+        .catch(error => {
+          alert("Error: " + error.message);
+        });
+    }
+
+    // Login with Google
+    function googleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(() => window.location.href = "menu.html")
+        .catch(error => {
+          alert("Google login failed: " + error.message);
+        });
+    }
+  </script>
+</body>
+</html>
