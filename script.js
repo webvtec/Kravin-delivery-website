@@ -1,61 +1,40 @@
-const sheetId = "1En6VDJfoG0eG7JlabNspYP7Cqc3PzZVU-87kwJdZjgQ";
-const sheetName = "Sheet1"; // Change if your sheet tab name is different
+const sheetId = "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA";
+const sheetName = "Sheet1"; // Rename if needed
+const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
-const menuContainer = document.getElementById("menu-container");
+fetch(sheetUrl)
+  .then((response) => {
+    if (!response.ok) throw new Error("Network response was not ok");
+    return response.json();
+  })
+  .then((products) => {
+    const container = document.getElementById("product-list");
+    container.innerHTML = "";
 
-async function fetchMenu() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyBzL1oenc86BspfTE8tsFfiOHrP0wnu6Co`;
+    products.forEach((item) => {
+      const product = document.createElement("div");
+      product.className = "product";
 
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!data.values) {
-      menuContainer.innerHTML = "<p>Failed to load menu data.</p>";
-      return;
-    }
-
-    const headers = data.values[0];
-    const rows = data.values.slice(1);
-
-    rows.forEach(row => {
-      // Map row data by headers
-      const product = {};
-      headers.forEach((h, i) => {
-        product[h] = row[i];
-      });
-
-      addProduct(product);
+      product.innerHTML = `
+        <img src="${item.Image}" alt="${item.Name}" />
+        <h3>${item.Name}</h3>
+        <p>${item.Description}</p>
+        <p>$${item.Price}</p>
+        <button class="snipcart-add-item"
+          data-item-id="${item.Name}"
+          data-item-name="${item.Name}"
+          data-item-price="${item.Price}"
+          data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
+          data-item-description="${item.Description}"
+          data-item-image="${item.Image}">
+          Add to Cart
+        </button>
+      `;
+      container.appendChild(product);
     });
-
-  } catch (error) {
-    console.error("Error fetching menu:", error);
-    menuContainer.innerHTML = "<p>Error loading menu.</p>";
-  }
-}
-
-function addProduct(product) {
-  const div = document.createElement("div");
-  div.className = "product";
-
-  div.innerHTML = `
-    <img src="${product.image}" alt="${product.name}" />
-    <div class="product-details">
-      <h3>${product.name}</h3>
-      <p class="description">${product.description}</p>
-      <p class="price">$${product.price}</p>
-      <button 
-        class="snipcart-add-item"
-        data-item-id="${product.id}"
-        data-item-price="${product.price}"
-        data-item-url="https://yourdomain.com/menu.html"
-        data-item-name="${product.name}">
-        Add to Cart
-      </button>
-    </div>
-  `;
-
-  menuContainer.appendChild(div);
-}
-
-fetchMenu();
+  })
+  .catch((error) => {
+    console.error("Failed to load menu:", error);
+    document.getElementById("product-list").innerHTML =
+      "<p>Failed to load menu.</p>";
+  });
