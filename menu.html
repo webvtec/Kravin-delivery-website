@@ -5,14 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>KRAVIN DELIVERY</title>
 
-  <!-- Snipcart -->
-  <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
-  <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
-  <div hidden id="snipcart" 
-       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
-       data-currency="jmd">
-  </div>
-
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -149,20 +141,6 @@
       margin: 4px 0;
     }
 
-    .snipcart-add-item {
-      background-color: #ff6600;
-      color: white;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    .snipcart-add-item:hover {
-      background-color: #e65c00;
-    }
-
     .logout-btn {
       background-color: red;
       color: white;
@@ -185,7 +163,7 @@
 
   <!-- Cart Icon -->
   <div class="cart-icon">
-    <button class="snipcart-checkout" style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
+    <button style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
   </div>
 
   <!-- Top Bar -->
@@ -223,24 +201,24 @@
 
     // Show profile + logout
     firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const date = new Date(user.metadata.creationTime).toLocaleDateString();
-    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+      const profile = document.getElementById("user-profile");
+      if (user) {
+        const name = user.displayName || user.email.split('@')[0];
+        const email = user.email;
+        const date = new Date(user.metadata.creationTime).toLocaleDateString();
+        const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-    profile.innerHTML = `
-      <img src="${avatar}" alt="avatar" />
-      <p><strong>${name}</strong></p>
-      <p>${email}</p>
-      <p>Joined: ${date}</p>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    `;
-  } else {
-    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-  }
-});
+        profile.innerHTML = `
+          <img src="${avatar}" alt="avatar" />
+          <p><strong>${name}</strong></p>
+          <p>${email}</p>
+          <p>Joined: ${date}</p>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        `;
+      } else {
+        profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
+      }
+    });
 
     function logout() {
       firebase.auth().signOut().then(() => {
@@ -283,14 +261,6 @@
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
               <p><strong>${item.Price}</strong></p>
-              <button class="snipcart-add-item"
-                data-item-id="${item.Name}"
-                data-item-name="${item.Name}"
-                data-item-price="${item.Price.replace(/[^0-9.]/g, '')}"
-                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
-                data-item-image="${item.Image}">
-                Add to Cart
-              </button>
             `;
             container.appendChild(product);
           });
