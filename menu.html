@@ -170,47 +170,48 @@
     }
 
     function loadMenu(restaurant) {
-      document.getElementById("product-list").innerHTML = "Loading menu...";
-      const sheetId = sheets[restaurant];
-      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+  document.getElementById("product-list").innerHTML = "Loading menu...";
+  const sheetId = sheets[restaurant];
+  const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
-      fetch(sheetUrl)
-        .then((res) => {
-          if (!res.ok) throw new Error("Network error");
-          return res.json();
-        })
-        .then((products) => {
-          const container = document.getElementById("product-list");
-          container.innerHTML = "";
+  fetch(sheetUrl)
+    .then((res) => {
+      if (!res.ok) throw new Error("Network error");
+      return res.json();
+    })
+    .then((products) => {
+      const container = document.getElementById("product-list");
+      container.innerHTML = "";
 
-          products.forEach((item) => {
-            const product = document.createElement("div");
-            product.className = "product";
+      products.forEach((item) => {
+        const product = document.createElement("div");
+        product.className = "product";
 
-            product.innerHTML = `
-              <img src="${item.Image}" alt="${item.Name}" />
-              <h3>${item.Name}</h3>
-              <p><strong>${item.Price}</strong></p>
-              <button class="snipcart-add-item"
-                data-item-id="${item.Name}"
-                data-item-name="${item.Name}"
-                data-item-price="${item.Price.replace('$', '')}"
-                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
-                data-item-image="${item.Image}">
-                Add to Cart
-              </button>
-            `;
-            container.appendChild(product);
-          });
-        })
-        .catch((err) => {
-          document.getElementById("product-list").innerHTML = `
-            <p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}. Check your Google Sheet.</p>
-          `;
-        });
+        product.innerHTML = `
+          <img src="${item.Image}" alt="${item.Name}" />
+          <h3>${item.Name}</h3>
+          <p><strong>${item.Price}</strong></p>
+          <button class="snipcart-add-item"
+            data-item-id="${item.Name}"
+            data-item-name="${item.Name}"
+            data-item-price="${item.Price.replace('$', '')}"
+            data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
+            data-item-image="${item.Image}">
+            Add to Cart
+          </button>
+        `;
+        container.appendChild(product);
+      });
+    })
+    .catch((err) => {
+      document.getElementById("product-list").innerHTML = `
+        <p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}. Check your Google Sheet.</p>
+      `;
+    });
 
-      toggleMenu(); // close menu
-    }
+  // REMOVE this line 👇 so menu stays hidden unless user clicks
+  // toggleMenu();
+}
 
     // Load KFC by default
     loadMenu("KFC");
