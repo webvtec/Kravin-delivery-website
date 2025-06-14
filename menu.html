@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
+  <!-- PayPal SDK: Replace YOUR_PAYPAL_CLIENT_ID below -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -61,6 +64,19 @@
       height: 50px;
       display: flex;
       align-items: center;
+      cursor: pointer;
+    }
+
+    #cart-count {
+      background: red;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 50%;
+      padding: 2px 6px;
+      position: absolute;
+      top: 2px;
+      right: 2px;
     }
 
     .dropdown {
@@ -141,17 +157,78 @@
       margin: 4px 0;
     }
 
-    .logout-btn {
-      background-color: red;
+    .add-to-cart-btn {
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: red;
       color: white;
       border: none;
-      padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 10px;
+      font-weight: bold;
     }
 
-    .logout-btn:hover {
+    .add-to-cart-btn:hover {
+      background: darkred;
+    }
+
+    #cart-dropdown {
+      position: fixed;
+      top: 50px;
+      right: 0;
+      width: 320px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: none;
+      z-index: 1100;
+    }
+
+    #cart-dropdown h3 {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+    }
+
+    .cart-item p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .cart-item .qty {
+      font-weight: bold;
+    }
+
+    #cart-total {
+      font-weight: bold;
+      text-align: right;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    #cart-dropdown button.checkout-btn {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: red;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #cart-dropdown button.checkout-btn:hover {
       background-color: darkred;
     }
   </style>
@@ -162,59 +239,9 @@
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
 
   <!-- Cart Icon -->
-  <div class="cart-icon">
-    <button 
-      style="background: none; border: none; font-size: 24px; cursor: pointer; position: relative;" 
-      onclick="toggleCart()"
-      aria-label="Toggle cart"
-    >
-      🛒
-      <span id="cart-count" style="
-        position: absolute;
-        top: 0;
-        right: -6px;
-        background: red;
-        color: white;
-        border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 12px;
-        font-weight: bold;
-        display: none;
-        user-select: none;
-      ">0</span>
-    </button>
-  </div>
-
-  <!-- Cart Dropdown Panel -->
-  <div id="cart-dropdown" style="
-    display:none;
-    position: fixed;
-    top: 50px;
-    right: 0;
-    width: 300px;
-    max-height: 400px;
-    overflow-y: auto;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 1002;
-    padding: 10px;
-    border-radius: 4px;
-  ">
-    <h3 style="text-align:center; margin-bottom:10px;">Your Cart</h3>
-    <div id="cart-items">
-      <p>Your cart is empty.</p>
-    </div>
-    <button onclick="checkout()" style="
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    ">Checkout</button>
+  <div class="cart-icon" onclick="toggleCart()">
+    🛒
+    <span id="cart-count" style="display:none;">0</span>
   </div>
 
   <!-- Top Bar -->
@@ -226,15 +253,24 @@
 
     <div class="dropdown-title">RESTAURANTS</div>
 
-    <a href="#" onclick="loadMenu('KFC')">KFC</a>
-    <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
-    <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
-    <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
-    <a href="#" onclick="loadMenu('Tastees')">Tastees</a>
+    <a href="#" onclick="loadMenu('KFC'); return false;">KFC</a>
+    <a href="#" onclick="loadMenu('LasVagas'); return false;">Las Vagas</a>
+    <a href="#" onclick="loadMenu('Cloggys'); return false;">Cloggys</a>
+    <a href="#" onclick="loadMenu('Waterloo'); return false;">Waterloo Guesthouse</a>
+    <a href="#" onclick="loadMenu('Tastees'); return false;">Tastees</a>
   </div>
 
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
+
+  <!-- Cart Dropdown -->
+  <div id="cart-dropdown">
+    <h3>Your Cart</h3>
+    <div id="cart-items"></div>
+    <div id="cart-total"></div>
+    <button class="checkout-btn" onclick="checkout()">Checkout</button>
+    <div id="paypal-button-container" style="margin-top:10px; display:none;"></div>
+  </div>
 
   <script>
     // Firebase config
@@ -284,6 +320,12 @@
       dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     }
 
+    // Toggle Cart
+    function toggleCart() {
+      const cartDropdown = document.getElementById("cart-dropdown");
+      cartDropdown.style.display = cartDropdown.style.display === "block" ? "none" : "block";
+    }
+
     // Google Sheets setup
     const sheets = {
       KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
@@ -310,21 +352,8 @@
             product.innerHTML = `
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
-              <p><strong>${item.Price}</strong></p>
-              <button onclick='addToCart({
-                id: "${item.Name}",
-                name: "${item.Name}",
-                price: ${parseFloat(item.Price.replace(/[^0-9.]/g, ""))},
-                image: "${item.Image}"
-              })' style="
-                margin-top: 8px;
-                padding: 8px 12px;
-                background: red;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-              ">Add to Cart</button>
+              <p><strong>$${item.Price}</strong></p>
+              <button class="add-to-cart-btn" onclick='addToCart(${JSON.stringify(item)})'>Add to Cart</button>
             `;
             container.appendChild(product);
           });
@@ -337,94 +366,137 @@
       document.getElementById("menu-dropdown").style.display = "none";
     }
 
-    // Load default menu
-    window.onload = () => loadMenu("KFC");
-
-    // CART LOGIC
-
+    // Cart data
     let cart = [];
 
-    function addToCart(product) {
-      // Check if product is already in cart
-      const existing = cart.find(item => item.id === product.id);
+    function addToCart(item) {
+      const existing = cart.find(i => i.Name === item.Name);
       if (existing) {
-        existing.qty += 1;
+        existing.qty++;
       } else {
-        product.qty = 1;
-        cart.push(product);
+        cart.push({ ...item, qty: 1, price: parseFloat(item.Price) });
       }
       updateCartUI();
     }
 
     function updateCartUI() {
-      const countElem = document.getElementById('cart-count');
-      const cartItemsElem = document.getElementById('cart-items');
+      const cartCount = document.getElementById("cart-count");
+      const cartDropdown = document.getElementById("cart-dropdown");
+      const cartItems = document.getElementById("cart-items");
+      const cartTotal = document.getElementById("cart-total");
 
+      // Update count badge
       const totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
-
       if (totalQty > 0) {
-        countElem.style.display = 'inline-block';
-        countElem.textContent = totalQty;
+        cartCount.style.display = "inline-block";
+        cartCount.textContent = totalQty;
       } else {
-        countElem.style.display = 'none';
+        cartCount.style.display = "none";
+        cartDropdown.style.display = "none"; // hide cart if empty
       }
 
+      // Render cart items
+      cartItems.innerHTML = "";
       if (cart.length === 0) {
-        cartItemsElem.innerHTML = '<p>Your cart is empty.</p>';
+        cartItems.innerHTML = "<p>Your cart is empty.</p>";
+        cartTotal.textContent = "";
         return;
       }
 
-      // Clear current cart items
-      cartItemsElem.innerHTML = '';
-
       cart.forEach(item => {
-        const div = document.createElement('div');
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.marginBottom = '10px';
-
+        const div = document.createElement("div");
+        div.className = "cart-item";
         div.innerHTML = `
-          <img src="${item.image}" alt="${item.name}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:10px;">
-          <div style="flex-grow:1;">
-            <strong>${item.name}</strong><br/>
-            $${item.price.toFixed(2)} × ${item.qty}
-          </div>
-          <button onclick="removeFromCart('${item.id}')" style="
-            background: red;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            padding: 2px 6px;
-          ">×</button>
+          <p>${item.Name} x <span class="qty">${item.qty}</span></p>
+          <p>$${(item.price * item.qty).toFixed(2)}</p>
+          <button onclick="removeFromCart('${item.Name}')" style="background:none; border:none; color:red; cursor:pointer;">×</button>
         `;
-
-        cartItemsElem.appendChild(div);
+        cartItems.appendChild(div);
       });
+
+      // Show total
+      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+      cartTotal.textContent = `Total: $${total.toFixed(2)}`;
     }
 
-    function removeFromCart(id) {
-      cart = cart.filter(item => item.id !== id);
+    function removeFromCart(name) {
+      cart = cart.filter(item => item.Name !== name);
       updateCartUI();
     }
 
-    function toggleCart() {
-      const cartDropdown = document.getElementById('cart-dropdown');
-      cartDropdown.style.display = cartDropdown.style.display === 'block' ? 'none' : 'block';
-    }
-
+    // PayPal Checkout Integration
     function checkout() {
       if (cart.length === 0) {
         alert("Your cart is empty!");
         return;
       }
-      let summary = "Order Summary:\n\n";
-      cart.forEach(item => {
-        summary += `${item.name} x ${item.qty} = $${(item.price * item.qty).toFixed(2)}\n`;
-      });
-      summary += `\nTotal: $${cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2)}`;
-      alert(summary + "\n\n(Checkout is not implemented yet.)");
+
+      // Hide the default checkout button to avoid duplicate clicks
+      document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'none';
+
+      // Show the PayPal button container
+      const paypalContainer = document.getElementById('paypal-button-container');
+      paypalContainer.style.display = 'block';
+
+      // Calculate total amount
+      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
+
+      // Render PayPal button only once
+      if (!window.paypalButtonRendered) {
+        paypal.Buttons({
+          createOrder: function(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: {
+                  value: total
+                },
+                description: "KRAVIN DELIVERY Order"
+              }]
+            });
+          },
+          onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+              alert('Transaction completed by ' + details.payer.name.given_name + '!');
+
+              // Clear cart
+              cart = [];
+              updateCartUI();
+
+              // Hide PayPal button container and show checkout button again
+              paypalContainer.style.display = 'none';
+              document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
+
+              // Close cart dropdown
+              document.getElementById('cart-dropdown').style.display = 'none';
+            });
+          },
+          onCancel: function() {
+            alert('Payment cancelled.');
+            paypalContainer.style.display = 'none';
+            document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
+          },
+          onError: function(err) {
+            console.error(err);
+            alert('An error occurred during the transaction.');
+            paypalContainer.style.display = 'none';
+            document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
+          },
+          style: {
+            layout: 'vertical',
+            color:  'blue',
+            shape:  'rect',
+            label:  'paypal'
+          }
+        }).render('#paypal-button-container');
+        window.paypalButtonRendered = true;
+      }
     }
+
+    // Load default menu
+    window.onload = () => {
+      loadMenu("KFC");
+      updateCartUI();
+    };
   </script>
 </body>
 </html>
