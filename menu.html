@@ -8,9 +8,15 @@
   <!-- Snipcart -->
   <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
   <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
-  <div hidden id="snipcart" 
-       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
+  <div hidden id="snipcart"
+       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky"
        data-currency="jmd">
+    <billing>
+      <fields>
+        <!-- Require phone number -->
+        <field name="phone" required="true" />
+      </fields>
+    </billing>
   </div>
 
   <!-- Firebase -->
