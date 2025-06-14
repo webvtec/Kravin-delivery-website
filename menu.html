@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>KRAVIN DELIVERY</title>
 
   <!-- Firebase -->
@@ -13,12 +13,17 @@
   <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
       padding-top: 80px;
+      overflow-x: hidden;
     }
 
     .top-bar {
@@ -89,6 +94,8 @@
       padding: 10px;
       display: none;
       z-index: 1000;
+      max-height: calc(100vh - 50px);
+      overflow-y: auto;
     }
 
     .dropdown-title {
@@ -134,13 +141,16 @@
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
     .product {
       background: white;
       padding: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       text-align: center;
+      border-radius: 6px;
     }
 
     .product img {
@@ -166,6 +176,7 @@
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
+      transition: background-color 0.2s ease;
     }
 
     .add-to-cart-btn:hover {
@@ -182,9 +193,10 @@
       background: white;
       border: 1px solid #ccc;
       padding: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       display: none;
       z-index: 1100;
+      border-radius: 6px 0 0 6px;
     }
 
     #cart-dropdown h3 {
@@ -198,15 +210,28 @@
       margin-bottom: 8px;
       border-bottom: 1px solid #eee;
       padding-bottom: 6px;
+      align-items: center;
     }
 
     .cart-item p {
       margin: 0;
       font-size: 14px;
+      flex: 1;
     }
 
     .cart-item .qty {
       font-weight: bold;
+      margin-left: 5px;
+    }
+
+    .cart-item button {
+      background: none;
+      border: none;
+      color: red;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 0 4px;
     }
 
     #cart-total {
@@ -226,10 +251,66 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
     }
 
     #cart-dropdown button.checkout-btn:hover {
       background-color: darkred;
+    }
+
+    /* FULL PAGE MODAL FOR CHECKOUT */
+
+    #checkout-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.75);
+      z-index: 2000;
+      overflow-y: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #checkout-content {
+      background: white;
+      max-width: 480px;
+      width: 100%;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    #checkout-content h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #paypal-button-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #checkout-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #888;
+      transition: color 0.2s ease;
+    }
+
+    #checkout-close-btn:hover {
+      color: red;
     }
   </style>
 </head>
@@ -268,8 +349,16 @@
     <h3>Your Cart</h3>
     <div id="cart-items"></div>
     <div id="cart-total"></div>
-    <button class="checkout-btn" onclick="checkout()">Checkout</button>
-    <div id="paypal-button-container" style="margin-top:10px; display:none;"></div>
+    <button class="checkout-btn" onclick="openCheckout()">Checkout</button>
+  </div>
+
+  <!-- Full page checkout modal -->
+  <div id="checkout-modal" aria-modal="true" role="dialog" aria-labelledby="checkout-title">
+    <div id="checkout-content">
+      <button id="checkout-close-btn" aria-label="Close checkout modal" onclick="closeCheckout()">×</button>
+      <h2 id="checkout-title">Complete Your Payment</h2>
+      <div id="paypal-button-container"></div>
+    </div>
   </div>
 
   <script>
@@ -409,7 +498,7 @@
         div.innerHTML = `
           <p>${item.Name} x <span class="qty">${item.qty}</span></p>
           <p>$${(item.price * item.qty).toFixed(2)}</p>
-          <button onclick="removeFromCart('${item.Name}')" style="background:none; border:none; color:red; cursor:pointer;">×</button>
+          <button onclick="removeFromCart('${item.Name}')">&times;</button>
         `;
         cartItems.appendChild(div);
       });
@@ -424,79 +513,81 @@
       updateCartUI();
     }
 
-    // PayPal Checkout Integration
-    function checkout() {
+    // OPEN CHECKOUT MODAL & RENDER PAYPAL BUTTONS
+    function openCheckout() {
       if (cart.length === 0) {
         alert("Your cart is empty!");
         return;
       }
 
-      // Hide the default checkout button to avoid duplicate clicks
-      document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'none';
+      const modal = document.getElementById('checkout-modal');
+      modal.style.display = 'flex';
 
-      // Show the PayPal button container
-      const paypalContainer = document.getElementById('paypal-button-container');
-      paypalContainer.style.display = 'block';
-
-      // Calculate total amount
-      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
-
-      // Render PayPal button only once
-      if (!window.paypalButtonRendered) {
-        paypal.Buttons({
-          createOrder: function(data, actions) {
-            return actions.order.create({
-              purchase_units: [{
-                amount: {
-                  value: total
-                },
-                description: "KRAVIN DELIVERY Order"
-              }]
-            });
-          },
-          onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-              alert('Transaction completed by ' + details.payer.name.given_name + '!');
-
-              // Clear cart
-              cart = [];
-              updateCartUI();
-
-              // Hide PayPal button container and show checkout button again
-              paypalContainer.style.display = 'none';
-              document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
-
-              // Close cart dropdown
-              document.getElementById('cart-dropdown').style.display = 'none';
-            });
-          },
-          onCancel: function() {
-            alert('Payment cancelled.');
-            paypalContainer.style.display = 'none';
-            document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
-          },
-          onError: function(err) {
-            console.error(err);
-            alert('An error occurred during the transaction.');
-            paypalContainer.style.display = 'none';
-            document.querySelector('#cart-dropdown button.checkout-btn').style.display = 'block';
-          },
-          style: {
-            layout: 'vertical',
-            color:  'blue',
-            shape:  'rect',
-            label:  'paypal'
-          }
-        }).render('#paypal-button-container');
-        window.paypalButtonRendered = true;
-      }
+      // Render PayPal buttons with current total
+      renderPayPalButtons();
     }
 
-    // Load default menu
-    window.onload = () => {
-      loadMenu("KFC");
-      updateCartUI();
-    };
+    // CLOSE CHECKOUT MODAL
+    function closeCheckout() {
+      const modal = document.getElementById('checkout-modal');
+      modal.style.display = 'none';
+
+      // Remove PayPal buttons (clear container)
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+    }
+
+    // RENDER PAYPAL BUTTONS DYNAMICALLY EACH TIME
+    function renderPayPalButtons() {
+      const total = cart.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2);
+
+      paypal.Buttons({
+        createOrder: function (data, actions) {
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                value: total
+              },
+              description: "KRAVIN DELIVERY Order"
+            }]
+          });
+        },
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(function (details) {
+            alert('Transaction completed by ' + details.payer.name.given_name + '!');
+
+            // Clear cart
+            cart = [];
+            updateCartUI();
+
+            // Close modal
+            closeCheckout();
+
+            // Close cart dropdown if open
+            document.getElementById('cart-dropdown').style.display = 'none';
+          });
+        },
+        onCancel: function () {
+          alert('Payment cancelled.');
+          closeCheckout();
+        },
+        onError: function (err) {
+          console.error(err);
+          alert('An error occurred during the transaction.');
+          closeCheckout();
+        },
+        style: {
+          layout: 'vertical',
+          color: 'blue',
+          shape: 'rect',
+          label: 'paypal'
+        }
+      }).render('#paypal-button-container');
+    }
+
+    // Load initial menu (e.g., KFC)
+    loadMenu('KFC');
+
   </script>
 </body>
 </html>
