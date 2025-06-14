@@ -9,150 +9,75 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
+  <!-- PayPal SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* existing styles ... */
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      padding-top: 80px;
-    }
-
-    .top-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background-color: red;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-
-    .top-bar h1 {
-      color: white;
-      font-size: 20px;
-    }
-
-    .menu-icon {
-      position: fixed;
-      top: 0;
-      left: 0;
-      font-size: 28px;
-      cursor: pointer;
-      background: white;
-      padding: 8px 12px;
-      z-index: 1001;
-      height: 50px;
-      display: flex;
-      align-items: center;
-    }
-
-    .cart-icon {
-      position: fixed;
-      top: 0;
-      right: 0;
-      font-size: 28px;
-      background: white;
-      padding: 8px 12px;
-      z-index: 1001;
-      height: 50px;
-      display: flex;
-      align-items: center;
-    }
-
-    .dropdown {
-      position: fixed;
-      top: 50px;
-      left: 0;
-      width: 250px;
-      background: rgba(255, 255, 255, 0.9);
-      border-right: 1px solid #ccc;
-      padding: 10px;
-      display: none;
-      z-index: 1000;
-    }
-
-    .dropdown-title {
-      text-align: center;
-      font-weight: bold;
-      font-size: 16px;
-      margin: 10px 0;
-    }
-
-    .dropdown a {
-      display: block;
-      padding: 8px;
-      font-weight: bold;
-      color: #333;
-      text-decoration: none;
-    }
-
-    .dropdown a:hover {
-      background: #eee;
-    }
-
-    .user-info {
-      text-align: center;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .user-info img {
-      width: 60px;
-      border-radius: 50%;
-      margin-bottom: 8px;
-    }
-
-    .user-info p {
-      font-size: 14px;
-      color: #444;
-      margin: 2px 0;
-    }
-
-    #product-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
-      padding: 10px;
-    }
-
-    .product {
-      background: white;
-      padding: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-
-    .product img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-
-    .product h3 {
-      margin: 10px 0 5px;
-    }
-
-    .product p {
-      margin: 4px 0;
-    }
-
-    .logout-btn {
-      background-color: red;
+    /* Add to Cart button */
+    .add-to-cart-btn {
+      margin-top: 8px;
+      padding: 6px 12px;
+      background-color: #28a745;
       color: white;
       border: none;
-      padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 10px;
+    }
+    .add-to-cart-btn:hover {
+      background-color: #218838;
     }
 
-    .logout-btn:hover {
-      background-color: darkred;
+    /* Modal styles */
+    #checkout-modal {
+      display: none;
+      position: fixed;
+      z-index: 1100;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    #checkout-modal .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+      box-sizing: border-box;
+    }
+    #checkout-modal label {
+      display: block;
+      margin-top: 10px;
+    }
+    #checkout-modal input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+    #checkout-modal button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 8px;
+      background: #0070ba;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #checkout-modal button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    #close-modal {
+      float: right;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 20px;
     }
   </style>
 </head>
@@ -163,7 +88,7 @@
 
   <!-- Cart Icon -->
   <div class="cart-icon">
-    <button style="background: none; border: none; font-size: 24px; cursor: pointer;">🛒</button>
+    <button style="background: none; border: none; font-size: 24px; cursor: pointer;" onclick="openCart()">🛒</button>
   </div>
 
   <!-- Top Bar -->
@@ -173,9 +98,7 @@
   <div class="dropdown" id="menu-dropdown">
     <div class="user-info" id="user-profile">Loading profile...</div>
 
-    <!-- Added Title -->
     <div class="dropdown-title">RESTAURANTS</div>
-
     <a href="#" onclick="loadMenu('KFC')">KFC</a>
     <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
     <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
@@ -185,6 +108,26 @@
 
   <!-- Product Grid -->
   <div id="product-list">Loading menu...</div>
+
+  <!-- Checkout Modal -->
+  <div id="checkout-modal">
+    <div class="modal-content">
+      <span id="close-modal" onclick="closeModal()">&times;</span>
+      <h3>Checkout</h3>
+      <form id="checkout-form">
+        <label for="name">Name</label>
+        <input type="text" id="name" required />
+
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" required pattern="^[0-9+ -]{7,15}$" placeholder="+1234567890" />
+
+        <label for="address">Address (Coordinates)</label>
+        <input type="text" id="address" required placeholder="18.2266470, -77.7548756" pattern="^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$" />
+
+        <div id="paypal-button-container" style="margin-top: 15px;"></div>
+      </form>
+    </div>
+  </div>
 
   <script>
     // Firebase config
@@ -244,6 +187,9 @@
     };
     const sheetName = "Sheet1";
 
+    let cart = [];
+    let currentProduct = null; // for checkout modal
+
     function loadMenu(restaurant) {
       const sheetId = sheets[restaurant];
       const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
@@ -261,6 +207,7 @@
               <img src="${item.Image}" alt="${item.Name}" />
               <h3>${item.Name}</h3>
               <p><strong>${item.Price}</strong></p>
+              <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(item)})">Add to Cart</button>
             `;
             container.appendChild(product);
           });
@@ -271,6 +218,93 @@
 
       // Hide menu after selection
       document.getElementById("menu-dropdown").style.display = "none";
+    }
+
+    function addToCart(product) {
+      cart.push(product);
+      currentProduct = product;
+      openModal();
+    }
+
+    // Modal controls
+    const modal = document.getElementById('checkout-modal');
+    function openModal() {
+      modal.style.display = "flex";
+      renderPayPalButton();
+    }
+    function closeModal() {
+      modal.style.display = "none";
+      clearPayPalButton();
+      document.getElementById("checkout-form").reset();
+    }
+
+    // Validate coordinates pattern
+    function isValidCoordinates(coord) {
+      const pattern = /^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/;
+      return pattern.test(coord);
+    }
+
+    // Render PayPal button inside modal
+    function renderPayPalButton() {
+      clearPayPalButton();
+      paypal.Buttons({
+        style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'paypal' },
+        onInit: function(data, actions) {
+          // Disable the buttons initially
+          actions.disable();
+
+          // Enable when form valid
+          const form = document.getElementById('checkout-form');
+          form.addEventListener('input', () => {
+            const name = form.name.value.trim();
+            const phone = form.phone.value.trim();
+            const address = form.address.value.trim();
+
+            const validName = name.length > 0;
+            const validPhone = /^\+?[0-9\s-]{7,15}$/.test(phone);
+            const validAddress = isValidCoordinates(address);
+
+            if (validName && validPhone && validAddress) {
+              actions.enable();
+            } else {
+              actions.disable();
+            }
+          });
+        },
+        createOrder: function(data, actions) {
+          // Set up the transaction
+          return actions.order.create({
+            purchase_units: [{
+              description: currentProduct.Name,
+              amount: {
+                currency_code: 'USD',
+                value: currentProduct.Price.replace(/[^0-9.]/g, '') || '1.00'
+              }
+            }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            alert(`Transaction completed by ${details.payer.name.given_name}!`);
+            // Here you can send order details to your backend or database if needed
+            closeModal();
+            cart = []; // Clear cart
+          });
+        },
+        onError: function(err) {
+          alert('PayPal Checkout Error: ' + err);
+        }
+      }).render('#paypal-button-container');
+    }
+
+    function clearPayPalButton() {
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+    }
+
+    // Open cart placeholder (You can enhance it to show actual cart items)
+    function openCart() {
+      alert(`You have ${cart.length} item(s) in your cart.`);
     }
 
     // Load default menu
