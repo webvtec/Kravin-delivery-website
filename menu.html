@@ -86,10 +86,10 @@
           product.className = "product";
 
           product.innerHTML = `
-            <img src="{item.Image}" alt="${item.Name}" />
+            <img src="${item.Image}" alt="${item.Name}" />
             <h3>${item.Name}</h3>
             <p>${item.Description}</p>
-            <p><strong>${item.Price}</strong></p>
+            <p><strong>$${item.Price}</strong></p>
             <button class="snipcart-add-item"
               data-item-id="${item.Name}"
               data-item-name="${item.Name}"
