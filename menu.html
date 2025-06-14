@@ -6,7 +6,10 @@
   <title>Kravin Menu</title>
   <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.css" />
   <script async src="https://cdn.snipcart.com/themes/v3.3.0/default/snipcart.js"></script>
-  <div hidden id="snipcart" data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky"></div>
+  <div hidden id="snipcart" 
+       data-api-key="NDZmZGQyMjMtMmRhOS00NGYxLWE3ZDMtMjE3Y2I2OTUzMzIyNjM4ODUyOTYxNjA3OTk3Mzky" 
+       data-currency="jmd">
+  </div>
 
   <style>
     * {
@@ -18,17 +21,30 @@
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
-      padding-top: 60px;
+      padding-top: 80px;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: red;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .top-bar h1 {
+      color: white;
+      font-size: 20px;
     }
 
     #product-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
       padding: 10px;
     }
@@ -69,7 +85,6 @@
       background-color: #e65c00;
     }
 
-    /* Menu icon */
     .menu-icon {
       position: fixed;
       top: 0;
@@ -79,21 +94,20 @@
       background: white;
       padding: 8px 12px;
       border-radius: 0 0 6px 0;
-      z-index: 1000;
+      z-index: 1001;
       box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
     }
 
-    /* Dropdown menu */
     .dropdown {
       position: fixed;
-      top: 46px;
+      top: 50px;
       left: 0;
       background: white;
       border: 1px solid #ccc;
       border-radius: 0 6px 6px 0;
       padding: 10px;
       display: none;
-      z-index: 999;
+      z-index: 1000;
       box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
     }
 
@@ -109,7 +123,6 @@
       background-color: #f0f0f0;
     }
 
-    /* Cart icon */
     .cart-icon {
       position: fixed;
       top: 0;
@@ -118,14 +131,8 @@
       background: white;
       padding: 8px 12px;
       border-radius: 0 0 0 6px;
-      z-index: 1000;
+      z-index: 1001;
       box-shadow: -2px 2px 6px rgba(0,0,0,0.2);
-    }
-
-    @media (max-width: 480px) {
-      #product-list {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -150,7 +157,12 @@
     </button>
   </div>
 
-  <h1>Kravin Menu</h1>
+  <!-- Top Bar Title -->
+  <div class="top-bar">
+    <h1>Kravin Menu</h1>
+  </div>
+
+  <!-- Product List -->
   <div id="product-list">Loading menu...</div>
 
   <script>
@@ -170,51 +182,53 @@
     }
 
     function loadMenu(restaurant) {
-  document.getElementById("product-list").innerHTML = "Loading menu...";
-  const sheetId = sheets[restaurant];
-  const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+      document.getElementById("product-list").innerHTML = "Loading menu...";
+      const sheetId = sheets[restaurant];
+      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
-  fetch(sheetUrl)
-    .then((res) => {
-      if (!res.ok) throw new Error("Network error");
-      return res.json();
-    })
-    .then((products) => {
-      const container = document.getElementById("product-list");
-      container.innerHTML = "";
+      fetch(sheetUrl)
+        .then((res) => {
+          if (!res.ok) throw new Error("Network error");
+          return res.json();
+        })
+        .then((products) => {
+          const container = document.getElementById("product-list");
+          container.innerHTML = "";
 
-      products.forEach((item) => {
-        const product = document.createElement("div");
-        product.className = "product";
+          products.forEach((item) => {
+            const product = document.createElement("div");
+            product.className = "product";
 
-        product.innerHTML = `
-          <img src="${item.Image}" alt="${item.Name}" />
-          <h3>${item.Name}</h3>
-          <p><strong>${item.Price}</strong></p>
-          <button class="snipcart-add-item"
-            data-item-id="${item.Name}"
-            data-item-name="${item.Name}"
-            data-item-price="${item.Price.replace('$', '')}"
-            data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
-            data-item-image="${item.Image}">
-            Add to Cart
-          </button>
-        `;
-        container.appendChild(product);
-      });
-    })
-    .catch((err) => {
-      document.getElementById("product-list").innerHTML = `
-        <p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}. Check your Google Sheet.</p>
-      `;
-    });
+            product.innerHTML = `
+              <img src="${item.Image}" alt="${item.Name}" />
+              <h3>${item.Name}</h3>
+              <p><strong>${item.Price}</strong></p>
+              <button class="snipcart-add-item"
+                data-item-id="${item.Name}"
+                data-item-name="${item.Name}"
+                data-item-price="${item.Price.replace(/[^0-9.]/g, '')}"
+                data-item-url="https://webvtec.github.io/Kravin-delivery-website/menu.html"
+                data-item-image="${item.Image}">
+                Add to Cart
+              </button>
+            `;
+            container.appendChild(product);
+          });
+        })
+        .catch((err) => {
+          document.getElementById("product-list").innerHTML = `
+            <p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}. Check your Google Sheet.</p>
+          `;
+        });
 
-  // REMOVE this line 👇 so menu stays hidden unless user clicks
-  // toggleMenu();
-}
+      // Hide menu after selection
+      document.getElementById("menu-dropdown").style.display = "none";
+    }
 
     // Load KFC by default
-    loadMenu("KFC");
+    window.onload = () => {
+      loadMenu("KFC");
+    };
   </script>
 </body>
 </html>
