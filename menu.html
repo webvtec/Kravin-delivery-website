@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
   <!-- PayPal SDK -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
   <style>
     /* Style Pay Upon Arrival button */
@@ -372,19 +372,6 @@
     }
   }
 
-  function changeQuantity(name, delta) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    item.quantity += delta;
-    if (item.quantity <= 0) {
-      removeFromCart(name);
-    } else {
-      updateCartUI();
-      saveCart?.(); // call saveCart() if defined
-    }
-  }
-}
-
   function addToCart(name, price, image) {
     const existing = cart.find(i => i.name === name);
     if (existing) {
@@ -397,51 +384,39 @@
   }
 
   function updateCartUI() {
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
+    const countElem = document.getElementById("cart-count");
+    const cartItemsElem = document.getElementById("cart-items");
+    const checkoutBtn = document.getElementById("checkout-btn");
 
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    if (totalQuantity > 0) {
+      countElem.style.display = "inline-block";
+      countElem.textContent = totalQuantity;
+      checkoutBtn.style.display = "block";
+    } else {
+      countElem.style.display = "none";
+      checkoutBtn.style.display = "none";
+    }
 
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
+    if (cart.length === 0) {
+      cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
 
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.classList.add("cart-item");
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" style="width:60px; height:60px; object-fit:cover; margin-right:10px;" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price}<br/>
-        <div style="margin-top: 5px; display: flex; align-items: center; gap: 5px;">
-          <button onclick="changeQuantity('${item.name}', -1)" style="padding:2px 8px;">−</button>
-          <span>${item.quantity}</span>
-          <button onclick="changeQuantity('${item.name}', 1')" style="padding:2px 8px;">+</button>
+    cartItemsElem.innerHTML = "";
+    cart.forEach(item => {
+      const itemDiv = document.createElement("div");
+      itemDiv.innerHTML = `
+        <img src="${item.image}" alt="${item.name}" />
+        <div style="flex-grow:1;">
+          <strong>${item.name}</strong><br/>
+          ${item.price} x ${item.quantity}
         </div>
-      </div>
-      <button class="remove-item" onclick="removeFromCart('${item.name}')" style="margin-left:10px;">&times;</button>
-    `;
-    cartItemsElem.appendChild(itemDiv);
-  });
-}
-
-  // Add the PayPal button container only once
-  const paypalContainer = document.createElement("div");
-  paypalContainer.id = "paypal-button-container";
-  cartItemsElem.appendChild(paypalContainer);
-}
+        <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
+      `;
+      cartItemsElem.appendChild(itemDiv);
+    });
+  }
 
   function removeFromCart(name) {
     const index = cart.findIndex(i => i.name === name);
