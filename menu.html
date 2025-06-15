@@ -440,6 +440,7 @@ function payOnArrival() {
 
     // CHECKOUT MODAL LOGIC
     const checkoutModal = document.getElementById("checkout-modal");
+    <button id="pay-upon-arrival-btn" type="button">Pay Upon Arrival</button>
     const checkoutForm = document.getElementById("checkout-form");
     const formError = document.getElementById("form-error");
     const paymentSuccess = document.getElementById("payment-success");
@@ -493,38 +494,157 @@ function payOnArrival() {
             formError.style.display = "block";
             return actions.reject();
           }
-          formError.style.display = "none";
-          return actions.resolve();
-        },
-        createOrder: function(data, actions) {
-          const total = calculateTotal();
-          return actions.order.create({
-            purchase_units: [{
-              amount: {
-                value: total
-              },
-              description: "KRAVIN DELIVERY order"
-            }]
-          });
-        },
-        onApprove: function(data, actions) {
-          return actions.order.capture().then(function(details) {
-            paymentSuccess.style.display = "block";
-            checkoutForm.style.display = "none";
+<!-- Inside your checkout modal HTML -->
+<div id="checkout-modal" style="display:none;">
+  <form id="checkout-form">
+    <!-- Your existing form fields, e.g., name, phone, address -->
+    <input type="text" id="customer-name" name="name" placeholder="Name" required />
+    <input type="tel" id="customer-phone" name="phone" placeholder="Phone" required />
+    <input type="text" id="customer-address" name="address" placeholder="Address" required />
+    
+    <div id="form-error" style="color:red; display:none;"></div>
+    <div id="payment-success" style="color:green; display:none;">Payment Successful!</div>
 
-            // Here you can send order info to your backend or database
+    <div id="paypal-button-container"></div>
 
-            // Clear cart after payment success
-            cart.length = 0;
-            updateCartUI();
-          });
-        },
-        onError: function(err) {
-          formError.textContent = "Payment failed: " + err;
+    <!-- Add Pay Upon Arrival button -->
+    <button type="button" id="pay-upon-arrival-btn">Pay Upon Arrival</button>
+  </form>
+
+  <button onclick="closeCheckout()">Close</button>
+</div>
+
+<script>
+  // Your existing JS here...
+
+  // CHECKOUT MODAL LOGIC
+  const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutForm = document.getElementById("checkout-form");
+  const formError = document.getElementById("form-error");
+  const paymentSuccess = document.getElementById("payment-success");
+
+  function openCheckout() {
+    formError.style.display = "none";
+    paymentSuccess.style.display = "none";
+    checkoutForm.style.display = "block";
+    checkoutModal.style.display = "flex";
+    renderPayPalButtons();
+  }
+
+  function closeCheckout() {
+    checkoutModal.style.display = "none";
+    checkoutForm.reset();
+    document.getElementById("paypal-button-container").innerHTML = "";
+  }
+
+  function calculateTotal() {
+    let total = 0;
+    cart.forEach(item => {
+      const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
+      if (!isNaN(priceNum)) {
+        total += priceNum * item.quantity;
+      }
+    });
+    return total.toFixed(2);
+  }
+
+  function renderPayPalButtons() {
+    const container = document.getElementById("paypal-button-container");
+    container.innerHTML = "";
+
+    paypal.Buttons({
+      style: {
+        layout: 'vertical',
+        color:  'gold',
+        shape:  'rect',
+        label:  'paypal'
+      },
+      onClick: function(data, actions) {
+        if (!checkoutForm.checkValidity()) {
+          formError.textContent = "Please fill out all required fields correctly.";
           formError.style.display = "block";
+          return actions.reject();
         }
-      }).render("#paypal-button-container");
+        formError.style.display = "none";
+        return actions.resolve();
+      },
+      createOrder: function(data, actions) {
+        const total = calculateTotal();
+        return actions.order.create({
+          purchase_units: [{
+            amount: { value: total },
+            description: "KRAVIN DELIVERY order"
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          paymentSuccess.style.display = "block";
+          checkoutForm.style.display = "none";
+          cart.length = 0;
+          updateCartUI();
+        });
+      },
+      onError: function(err) {
+        formError.textContent = "Payment failed: " + err;
+        formError.style.display = "block";
+      }
+    }).render("#paypal-button-container");
+  }
+
+  // === NEW CODE for "Pay Upon Arrival" button ===
+  document.getElementById("pay-upon-arrival-btn").addEventListener("click", function() {
+    formError.style.display = "none";
+
+    // Validate form inputs
+    if (!checkoutForm.checkValidity()) {
+      formError.textContent = "Please fill out all required fields correctly.";
+      formError.style.display = "block";
+      return;
     }
-  </script>
+
+    const name = document.getElementById("customer-name").value.trim();
+    const phone = document.getElementById("customer-phone").value.trim();
+    const address = document.getElementById("customer-address").value.trim();
+
+    if (!name || !phone || !address) {
+      formError.textContent = "Please fill out all required fields.";
+      formError.style.display = "block";
+      return;
+    }
+
+    if (cart.length === 0) {
+      formError.textContent = "Your cart is empty.";
+      formError.style.display = "block";
+      return;
+    }
+
+    // Format cart items
+    let itemsList = "";
+    cart.forEach(item => {
+      itemsList += `- ${item.name} x${item.quantity}\n`;
+    });
+
+    // Construct WhatsApp URL with prefilled message
+    const message = 
+      `New Order for Pay Upon Arrival:\n` +
+      `Name: ${name}\n` +
+      `Phone: ${phone}\n` +
+      `Address: ${address}\n` +
+      `Items:\n${itemsList}`;
+
+    const whatsappNumber = "18763422293"; // Your WhatsApp number
+    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+    // Open WhatsApp link in new tab/window
+    window.open(whatsappURL, "_blank");
+
+    // Clear cart and UI, close modal
+    cart.length = 0;
+    updateCartUI();
+    closeCheckout();
+  });
+</script>
+
 </body>
   </html>
