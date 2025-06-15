@@ -359,10 +359,31 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
 
 // Add item to cart, enforcing single restaurant per order
 function addToCart(name, price, image) {
-  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("YOU CAN ONLY ORDER FROM ONE RESTURANT AT A TIME");
-    return;
-  }
+  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+    alert("YOU CAN ONLY ORDER FROM ONE RESTURANT AT A TIME");
+    return;
+  }
+
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+  }
+
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
+
+  // Show "Added to Cart" popup
+  showAddedToCartPopup();
+
+  // Open cart dropdown automatically
+  const cartDropdown = document.getElementById("cart-dropdown");
+  if (cartDropdown) {
+    cartDropdown.style.display = "block";
+  }
+}
 
   const existing = cart.find(i => i.name === name);
   if (existing) {
@@ -715,6 +736,34 @@ window.onload = () => {
   loadMenu("KFC");
   loadCart();
 };
+
+  function showAddedToCartPopup() {
+  let popup = document.getElementById("added-popup");
+  if (!popup) {
+    popup = document.createElement("div");
+    popup.id = "added-popup";
+    popup.textContent = "ADDED TO CART";
+    popup.style.position = "fixed";
+    popup.style.bottom = "20px";
+    popup.style.right = "20px";
+    popup.style.backgroundColor = "#28a745";
+    popup.style.color = "#fff";
+    popup.style.padding = "12px 20px";
+    popup.style.borderRadius = "8px";
+    popup.style.fontWeight = "bold";
+    popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+    popup.style.zIndex = "9999";
+    document.body.appendChild(popup);
+  }
+
+  popup.style.opacity = "1";
+
+  setTimeout(() => {
+    popup.style.transition = "opacity 0.5s";
+    popup.style.opacity = "0";
+  }, 1500);
+}
+
 </script>
 </body>
 </html>
