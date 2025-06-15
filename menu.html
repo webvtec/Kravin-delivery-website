@@ -226,29 +226,30 @@
   <div id="product-list">Loading menu...</div>
 
   <!-- Checkout Modal -->
-  <div id="checkout-modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeCheckout()">&times;</span>
-      <h2>Checkout</h2>
-      <form id="checkout-form">
-        <label for="customer-name">Name *</label>
-        <input type="text" id="customer-name" name="customerName" required />
+<div id="checkout-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeCheckout()">&times;</span>
+    <h2>Checkout</h2>
+    <form id="checkout-form">
+      <!-- Delivery Address Section -->
+      <label for="address">Delivery Address:</label>
+      <input type="text" id="address" name="address" required />
 
-        <label for="customer-phone">Phone *</label>
-        <input type="tel" id="customer-phone" name="customerPhone" required pattern="[0-9+\- ]{7,15}" placeholder="+1 234 567 890" />
+      <!-- PAY UPON ARRIVAL button -->
+      <button type="button" id="pay-on-delivery-btn" onclick="payOnArrival()" style="margin-top: 10px;">
+        PAY UPON ARRIVAL
+      </button>
 
-        <label for="customer-address">Delivery Address *</label>
-        <textarea id="customer-address" name="customerAddress" required></textarea>
+      <div id="paypal-button-container" style="margin-top: 20px;"></div>
+    </form>
 
-        <div class="error-message" id="form-error"></div>
-
-        <div id="paypal-button-container"></div>
-      </form>
-      <div class="success-message" id="payment-success" style="display:none;">
-        Payment successful! Thank you for your order.
-      </div>
+    <div id="form-error" style="color: red; display: none; margin-top: 10px;"></div>
+    <div id="payment-success" style="color: green; display: none; margin-top: 10px;">
+      Payment successful! Your order has been placed.
     </div>
   </div>
+</div>
+
 
   <script>
     // Firebase config
@@ -292,6 +293,23 @@
       });
     }
 
+function payOnArrival() {
+  if (!checkoutForm.checkValidity()) {
+    formError.textContent = "Please fill out all required fields.";
+    formError.style.display = "block";
+    return;
+  }
+
+  formError.style.display = "none";
+  paymentSuccess.style.display = "block";
+  checkoutForm.style.display = "none";
+
+  // Optional: Send order to backend here
+
+  cart.length = 0;
+  updateCartUI();
+}
+    
     // Toggle Menu
     function toggleMenu() {
       const dropdown = document.getElementById("menu-dropdown");
