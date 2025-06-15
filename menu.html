@@ -581,12 +581,19 @@ function closeCheckout() {
 
 function calculateTotal() {
   let total = 0;
+
+  // Calculate cart items total
   cart.forEach(item => {
     const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
     if (!isNaN(priceNum)) {
       total += priceNum * item.quantity;
     }
   });
+
+  // Add delivery fee
+  const deliveryFee = calculateDeliveryFee();
+  total += deliveryFee;
+
   return total.toFixed(2);
 }
 
@@ -676,30 +683,33 @@ function renderPayPalButtons() {
   const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number without '+'
 
   function payOnArrival() {
-    if (!checkoutForm.checkValidity()) {
-      formError.textContent = "Please fill out all required fields.";
-      formError.style.display = "block";
-      return;
-    }
+  if (!checkoutForm.checkValidity()) {
+    formError.textContent = "Please fill out all required fields.";
+    formError.style.display = "block";
+    return;
+  }
 
-    formError.style.display = "none";
+  formError.style.display = "none";
 
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const address = document.getElementById("address").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
-    if (cart.length === 0) {
-      formError.textContent = "Your cart is empty!";
-      formError.style.display = "block";
-      return;
-    }
+  if (cart.length === 0) {
+    formError.textContent = "Your cart is empty!";
+    formError.style.display = "block";
+    return;
+  }
 
-    let orderText = "";
-    cart.forEach(item => {
-      orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-    });
+  let orderText = "";
+  cart.forEach(item => {
+    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+  });
 
-    const message = 
+  const deliveryFee = calculateDeliveryFee();
+  const total = calculateTotal();
+
+  const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
 
 Restaurant: ${currentRestaurant}
@@ -709,26 +719,22 @@ Address: ${address}
 
 Order Details:
 ${orderText}
+Delivery Fee: JMD $${deliveryFee.toFixed(2)}
+Grand Total: JMD $${total}
 
 Thank you!`;
 
-    const encodedMessage = encodeURIComponent(message);
+  const encodedMessage = encodeURIComponent(message);
 
-    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
-    paymentSuccess.style.display = "block";
-    checkoutForm.style.display = "none";
+  paymentSuccess.style.display = "block";
+  checkoutForm.style.display = "none";
 
-    cart.length = 0;
-    updateCartUI();
-    saveCart();
-  }
-
-  // Make sure to call loadMenu("KFC") or whichever default on page load
-  window.onload = () => {
-    loadMenu("KFC");
-    loadCart();
-  };
+  cart.length = 0;
+  updateCartUI();
+  saveCart();
+}
   
 </script>
 </body>
