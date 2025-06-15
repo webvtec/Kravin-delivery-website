@@ -639,7 +639,7 @@ function renderPayPalButtons() {
   }).render("#paypal-button-container");
 }
 
-  // Track the current restaurant
+// Track the current restaurant
   let currentRestaurant = "KFC"; // default
 
   function loadMenu(restaurant) {
@@ -672,39 +672,6 @@ function renderPayPalButtons() {
     document.getElementById("menu-dropdown").style.display = "none";
   }
 
-  // Cart logic
-  const cart = [];
-
-  function addToCart(name, price, image) {
-    const existing = cart.find(i => i.name === name && i.restaurant === currentRestaurant);
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-    }
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
-
-  function updateCartUI() {
-    // Update cart UI logic here if needed
-  }
-
-  function saveCart() {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }
-
-  function loadCart() {
-    const storedCart = localStorage.getItem("cart");
-    if (storedCart) {
-      const items = JSON.parse(storedCart);
-      cart.length = 0;
-      cart.push(...items);
-      updateCartUI();
-    }
-  }
-
   // WhatsApp number for "Pay Upon Arrival"
   const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number without '+'
 
@@ -727,36 +694,26 @@ function renderPayPalButtons() {
       return;
     }
 
-    // Group items by restaurant
-    const groupedByRestaurant = {};
-    cart.forEach(item => {
-      if (!groupedByRestaurant[item.restaurant]) {
-        groupedByRestaurant[item.restaurant] = [];
-      }
-      groupedByRestaurant[item.restaurant].push(item);
-    });
-
-    // Build WhatsApp message
     let orderText = "";
-    for (const restaurant in groupedByRestaurant) {
-      orderText += `\n🧾 *${restaurant}*\n`;
-      groupedByRestaurant[restaurant].forEach(item => {
-        orderText += `- ${item.name} x${item.quantity} ($${item.price})\n`;
-      });
-    }
+    cart.forEach(item => {
+      orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+    });
 
     const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
 
+Restaurant: ${currentRestaurant}
 Name: ${name}
 Phone: ${phone}
 Address: ${address}
 
-Order Details:${orderText}
+Order Details:
+${orderText}
 
 Thank you!`;
 
     const encodedMessage = encodeURIComponent(message);
+
     window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
     paymentSuccess.style.display = "block";
@@ -767,11 +724,12 @@ Thank you!`;
     saveCart();
   }
 
-  // Load initial menu and cart
+  // Make sure to call loadMenu("KFC") or whichever default on page load
   window.onload = () => {
-    loadMenu("KFC"); // Default on load
+    loadMenu("KFC");
     loadCart();
   };
+  
 </script>
 </body>
 </html>
