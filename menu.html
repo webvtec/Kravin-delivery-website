@@ -385,24 +385,6 @@ function addToCart(name, price, image) {
   }
 }
 
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-  }
-
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
-
-  // Open cart dropdown automatically
-  const cartDropdown = document.getElementById("cart-dropdown");
-  if (cartDropdown) {
-    cartDropdown.style.display = "block";
-  }
-}
-
 // Remove item from cart
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
