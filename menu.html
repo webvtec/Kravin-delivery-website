@@ -338,16 +338,22 @@ function updateFeesAndTotal() {
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-function addToCart(name, price, image) {
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
+function addToCart(item) {
+  const existingItem = cart.find(cartItem => cartItem.name === item.name);
+
+  if (existingItem) {
+    existingItem.quantity += 1;
   } else {
-    cart.push({ name, price, image, quantity: 1 });
+    cart.push({
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+      restaurant: currentRestaurant // ✅ attach restaurant
+    });
   }
+
   updateCartUI();
   saveCart();
-  updateFeesAndTotal();
 }
 
 function removeFromCart(name) {
@@ -672,34 +678,48 @@ function payOnArrival() {
     return;
   }
 
-  let orderText = "";
   let total = 0;
+  const restaurantGroups = {};
 
   cart.forEach(item => {
     const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
     if (!isNaN(priceNum)) {
       total += priceNum * item.quantity;
     }
-    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+
+    if (!restaurantGroups[item.restaurant]) {
+      restaurantGroups[item.restaurant] = [];
+    }
+
+    restaurantGroups[item.restaurant].push(`- ${item.name} x${item.quantity} (${item.price})`);
   });
 
   const deliveryFee = calculateDeliveryFee();
   total += deliveryFee;
 
+  let orderText = "";
+
+  for (const [restaurant, items] of Object.entries(restaurantGroups)) {
+    orderText += `\nRestaurant: ${restaurant}\n`;
+    orderText += items.join("\n") + "\n";
+  }
+
   const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
 
-Restaurant: ${currentRestaurant}
+Name: Jason
+PHONE: 8761234567
+ADDRESS: Half Way Tree
 
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
+ORDER DETAILS:
+RESTURANT: KFC
+- Zinger Combo x1 (JMD $900)
 
-Order Details:
-${orderText}
+RESTURANT: CLOGGY'S
+- Jerk Chicken x2 (JMD $650)
 
-Delivery Fee: JMD $${deliveryFee.toFixed(2)}
-Total: JMD $${total.toFixed(2)}
+DELIVERY FEE: JMD $500.00
+Total: JMD $2700.00
 
 Thank you!`;
 
@@ -714,7 +734,7 @@ Thank you!`;
   updateCartUI();
   saveCart();
 }
-
+  
 </script>
 </body>
 </html>
