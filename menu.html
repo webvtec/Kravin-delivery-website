@@ -532,25 +532,29 @@ function loadMenu(restaurant) {
   document.getElementById("menu-dropdown").style.display = "none";
 }
 
-// Firebase auth state listener: show user profile or not logged in
+// Firebase auth state listener: redirect if not logged in
 firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const date = new Date(user.metadata.creationTime).toLocaleDateString();
-    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+  const profile = document.getElementById("user-profile");
 
-    profile.innerHTML = `
-      <img src="${avatar}" alt="avatar" />
-      <p><strong>${name}</strong></p>
-      <p>${email}</p>
-      <p>Joined: ${date}</p>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    `;
-  } else {
-    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-  }
+  if (!user) {
+    // Redirect to login page if not logged in
+    window.location.href = "login.html";
+    return;
+  }
+
+  // User is logged in - display profile
+  const name = user.displayName || user.email.split('@')[0];
+  const email = user.email;
+  const date = new Date(user.metadata.creationTime).toLocaleDateString();
+  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+  profile.innerHTML = `
+    <img src="${avatar}" alt="avatar" />
+    <p><strong>${name}</strong></p>
+    <p>${email}</p>
+    <p>Joined: ${date}</p>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  `;
 });
 
 // Logout function
