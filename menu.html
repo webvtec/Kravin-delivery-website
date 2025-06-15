@@ -277,6 +277,17 @@
 <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
 <script>
+let currentRestaurant = "KFC"; // default
+
+// Your other global variables like:
+// const cart = [];
+// const whatsappNumber = "1xxxxxxxxxx";
+
+function loadMenu(restaurant) {
+  currentRestaurant = restaurant; // ✅ track the restaurant
+  // ... your existing menu loading logic
+}
+  
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
@@ -662,12 +673,23 @@ function payOnArrival() {
   }
 
   let orderText = "";
+  let total = 0;
+
   cart.forEach(item => {
+    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
+    if (!isNaN(priceNum)) {
+      total += priceNum * item.quantity;
+    }
     orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
   });
 
+  const deliveryFee = calculateDeliveryFee();
+  total += deliveryFee;
+
   const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
+
+Restaurant: ${currentRestaurant}
 
 Name: ${name}
 Phone: ${phone}
@@ -675,6 +697,9 @@ Address: ${address}
 
 Order Details:
 ${orderText}
+
+Delivery Fee: JMD $${deliveryFee.toFixed(2)}
+Total: JMD $${total.toFixed(2)}
 
 Thank you!`;
 
@@ -689,6 +714,7 @@ Thank you!`;
   updateCartUI();
   saveCart();
 }
+
 </script>
 </body>
 </html>
