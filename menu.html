@@ -421,7 +421,7 @@ function loadMenu(restaurant) {
         product.className = "product";
         product.innerHTML = `
           <img src="${item.Image}" alt="${item.Name}" />
-          <h3>${item.Name}</h3>
+          <h3>$${item.Name}</h3>
           <p><strong>${item.Price}</strong></p>
           <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
         `;
