@@ -360,9 +360,9 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
 // Add item to cart, enforcing single restaurant per order
 function addToCart(name, price, image) {
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("You can only order from one restaurant at a time. Please clear your cart first.");
-    return;
-  }
+  showCustomAlert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
+  return;
+}
 
   const existing = cart.find(i => i.name === name);
   if (existing) {
