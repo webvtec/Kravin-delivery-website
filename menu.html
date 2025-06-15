@@ -640,19 +640,30 @@ function renderPayPalButtons() {
 }
 
 // Track the current restaurant
-  let currentRestaurant = "KFC"; // default
+  let currentRestaurant = "KFC";
+  let cart = [];
+
+  const productList = document.getElementById("product-list");
+  const cartItems = document.getElementById("cart-items");
+  const cartTotal = document.getElementById("cart-total");
+  const checkoutForm = document.getElementById("checkout-form");
+  const formError = document.getElementById("form-error");
+  const paymentSuccess = document.getElementById("payment-success");
+
+  document.getElementById("restaurant-select").addEventListener("change", (e) => {
+    loadMenu(e.target.value);
+  });
 
   function loadMenu(restaurant) {
-    currentRestaurant = restaurant; // update current restaurant
+    currentRestaurant = restaurant;
     const sheetId = sheets[restaurant];
     const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-    const container = document.getElementById("product-list");
-    container.innerHTML = "Loading menu...";
+    productList.innerHTML = "Loading menu...";
 
     fetch(sheetUrl)
       .then(res => res.json())
       .then(data => {
-        container.innerHTML = "";
+        productList.innerHTML = "";
         data.forEach(item => {
           const product = document.createElement("div");
           product.className = "product";
@@ -660,25 +671,61 @@ function renderPayPalButtons() {
             <img src="${item.Image}" alt="${item.Name}" />
             <h3>${item.Name}</h3>
             <p><strong>$${item.Price}</strong></p>
-            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${restaurant}')">Add to cart</button>
           `;
-          container.appendChild(product);
+          productList.appendChild(product);
         });
       })
       .catch(() => {
-        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+        productList.innerHTML = `<p style="color:red;">Failed to load menu for ${restaurant}</p>`;
       });
-
-    document.getElementById("menu-dropdown").style.display = "none";
   }
 
-  // WhatsApp number for "Pay Upon Arrival"
-  const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number without '+'
+  function addToCart(name, price, restaurant) {
+    price = parseFloat(price);
+    const existingItem = cart.find(item => item.name === name && item.restaurant === restaurant);
+    if (existingItem) {
+      existingItem.quantity++;
+    } else {
+      cart.push({ name, price, quantity: 1, restaurant });
+    }
+    updateCartUI();
+  }
+
+  function updateCartUI() {
+    cartItems.innerHTML = "";
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price * item.quantity;
+      const li = document.createElement("li");
+      li.textContent = `${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)} (${item.restaurant})`;
+      cartItems.appendChild(li);
+    });
+    cartTotal.textContent = total.toFixed(2);
+  }
+
+  function groupCartByRestaurant() {
+    const groups = {};
+    cart.forEach(item => {
+      if (!groups[item.restaurant]) {
+        groups[item.restaurant] = [];
+      }
+      groups[item.restaurant].push(item);
+    });
+    return groups;
+  }
 
   function payOnArrival() {
     if (!checkoutForm.checkValidity()) {
       formError.textContent = "Please fill out all required fields.";
       formError.style.display = "block";
+      paymentSuccess.style.display = "none";
+      return;
+    }
+    if (cart.length === 0) {
+      formError.textContent = "Your cart is empty!";
+      formError.style.display = "block";
+      paymentSuccess.style.display = "none";
       return;
     }
 
@@ -688,47 +735,36 @@ function renderPayPalButtons() {
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
 
-    if (cart.length === 0) {
-      formError.textContent = "Your cart is empty!";
-      formError.style.display = "block";
-      return;
+    const grouped = groupCartByRestaurant();
+    let message = `New KRAVIN DELIVERY Order - Pay on Arrival\n\n`;
+    message += `Name: ${name}\nPhone: ${phone}\nAddress: ${address}\n\n`;
+
+    let total = 0;
+
+    for (const [restaurant, items] of Object.entries(grouped)) {
+      message += `🛍️ From ${restaurant}:\n`;
+      items.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        message += `- ${item.name} x${item.quantity} ($${item.price.toFixed(2)})\n`;
+      });
+      message += "\n";
     }
 
-    let orderText = "";
-    cart.forEach(item => {
-      orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-    });
+    message += `Total: $${total.toFixed(2)}\n\nThank you!`;
 
-    const message = 
-`New KRAVIN DELIVERY Order - Pay on Arrival
-
-Restaurant: ${currentRestaurant}
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
-
-Order Details:
-${orderText}
-
-Thank you!`;
-
+    const whatsappNumber = "18763422293"; // your number here
     const encodedMessage = encodeURIComponent(message);
-
     window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
     paymentSuccess.style.display = "block";
-    checkoutForm.style.display = "none";
-
-    cart.length = 0;
+    checkoutForm.reset();
+    cart = [];
     updateCartUI();
-    saveCart();
   }
 
-  // Make sure to call loadMenu("KFC") or whichever default on page load
-  window.onload = () => {
-    loadMenu("KFC");
-    loadCart();
-  };
+  // Initialize with default restaurant
+  loadMenu(currentRestaurant);
   
 </script>
 </body>
