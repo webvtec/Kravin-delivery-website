@@ -296,16 +296,26 @@
         return actions.resolve();
       },
       createOrder: function(data, actions) {
-        const total = calculateTotal();
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: total
-            },
-            description: "KRAVIN DELIVERY order"
-          }]
-        });
+  const total = calculateTotal();
+  return actions.order.create({
+    purchase_units: [{
+      amount: {
+        value: total
       },
+      description: "KRAVIN DELIVERY order"
+    }],
+    application_context: {
+      shipping_preference: "NO_SHIPPING",
+      user_action: "PAY_NOW"
+    },
+    payer: {
+      address: {
+        country_code: "JM"  // Set default country to Jamaica
+      }
+    }
+  });
+}
+
       onApprove: function(data, actions) {
   return actions.order.capture().then(function(details) {
     // Show success UI
