@@ -341,11 +341,17 @@ function updateFeesAndTotal() {
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
 function addToCart(name, price, image) {
+  // Check if cart contains items from a different restaurant
+  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+    alert("You can only order from one restaurant at a time. Please clear your cart first.");
+    return;
+  }
+
   const existing = cart.find(i => i.name === name);
   if (existing) {
     existing.quantity += 1;
   } else {
-    cart.push({ name, price, image, quantity: 1 });
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
   }
 
   updateCartUI();
