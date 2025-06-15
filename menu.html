@@ -231,25 +231,31 @@
     <span class="close-btn" onclick="closeCheckout()">&times;</span>
     <h2>Checkout</h2>
     <form id="checkout-form">
-      <!-- Delivery Address Section -->
-      <label for="address">Delivery Address:</label>
-      <input type="text" id="address" name="address" required />
+  <!-- Name -->
+  <label for="name">Full Name:</label>
+  <input type="text" id="name" name="name" required />
 
-      <!-- PAY UPON ARRIVAL button -->
-      <button type="button" id="pay-on-delivery-btn" onclick="payOnArrival()" style="margin-top: 10px;">
-        PAY UPON ARRIVAL
-      </button>
+  <!-- Phone Number -->
+  <label for="phone">Phone Number:</label>
+  <input type="tel" id="phone" name="phone" required />
 
-      <div id="paypal-button-container" style="margin-top: 20px;"></div>
-    </form>
+  <!-- Delivery Address -->
+  <label for="address">Delivery Address:</label>
+  <input type="text" id="address" name="address" required />
 
-    <div id="form-error" style="color: red; display: none; margin-top: 10px;"></div>
-    <div id="payment-success" style="color: green; display: none; margin-top: 10px;">
-      Payment successful! Your order has been placed.
-    </div>
-  </div>
+  <!-- PAY UPON ARRIVAL button -->
+  <button type="button" id="pay-on-delivery-btn" onclick="payOnArrival()" style="margin-top: 10px;">
+    PAY UPON ARRIVAL
+  </button>
+
+  <!-- PayPal container -->
+  <div id="paypal-button-container" style="margin-top: 20px;"></div>
+</form>
+
+<div id="form-error" style="color: red; display: none; margin-top: 10px;"></div>
+<div id="payment-success" style="color: green; display: none; margin-top: 10px;">
+  Payment successful! Your order has been placed.
 </div>
-
 
   <script>
     // Firebase config
