@@ -258,26 +258,6 @@
 </div>
 
   <script>
-    // Load cart from localStorage if available
-const savedCart = localStorage.getItem('cart');
-if (savedCart) {
-  try {
-    const parsedCart = JSON.parse(savedCart);
-    // Validate parsedCart is an array and has items
-    if (Array.isArray(parsedCart)) {
-      cart.length = 0; // Clear current cart array
-      parsedCart.forEach(item => cart.push(item));
-    }
-  } catch (e) {
-    console.warn("Failed to parse saved cart from localStorage", e);
-  }
-}
-
-window.onload = () => {
-  updateCartUI();
-  loadMenu("KFC");
-};
-
     // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
@@ -385,121 +365,53 @@ function payOnArrival() {
     // Cart management
     const cart = [];
 
-// Load cart from localStorage on page load
-window.onload = () => {
-  const savedCart = localStorage.getItem('cart');
-  if (savedCart) {
-    try {
-      const parsedCart = JSON.parse(savedCart);
-      if (Array.isArray(parsedCart)) {
-        cart.length = 0; // clear current cart array
-        parsedCart.forEach(item => cart.push(item));
+    function addToCart(name, price, image) {
+      const existing = cart.find(i => i.name === name);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ name, price, image, quantity: 1 });
       }
-    } catch (e) {
-      console.error("Error parsing cart from localStorage", e);
+      updateCartUI();
     }
-  }
-
-  updateCartUI();
-  loadMenu("KFC");
-};
-
-function addToCart(name, price, image) {
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1 });
-  }
-  updateCartUI();
-}
-
-function updateCartUI() {
-  // Save cart to localStorage
-  localStorage.setItem('cart', JSON.stringify(cart));
-
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
-
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
-
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
-
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
-    `;
-
-    cartItemsElem.appendChild(itemDiv);
-  });
-}
-
-function removeFromCart(name) {
-  const index = cart.findIndex(i => i.name === name);
-  if (index > -1) {
-    cart.splice(index, 1);
-    updateCartUI();
-  }
 
     function updateCartUI() {
-  // Save cart to localStorage
-  localStorage.setItem('cart', JSON.stringify(cart));
+      const countElem = document.getElementById("cart-count");
+      const cartItemsElem = document.getElementById("cart-items");
+      const checkoutBtn = document.getElementById("checkout-btn");
 
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
+      // Update badge count
+      const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalQuantity > 0) {
+        countElem.style.display = "inline-block";
+        countElem.textContent = totalQuantity;
+        checkoutBtn.style.display = "block";
+      } else {
+        countElem.style.display = "none";
+        checkoutBtn.style.display = "none";
+      }
 
-  // Update badge count
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
+      // Show items in dropdown
+      if (cart.length === 0) {
+        cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+        return;
+      }
 
-  // Show items in dropdown
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
+      cartItemsElem.innerHTML = "";
+      cart.forEach(item => {
+        const itemDiv = document.createElement("div");
+        itemDiv.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" />
+          <div style="flex-grow:1;">
+            <strong>${item.name}</strong><br/>
+            ${item.price} x ${item.quantity}
+          </div>
+          <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
+        `;
 
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
-    `;
-
-    cartItemsElem.appendChild(itemDiv);
-  });
-}
+        cartItemsElem.appendChild(itemDiv);
+      });
+    }
 
     function removeFromCart(name) {
       const index = cart.findIndex(i => i.name === name);
@@ -604,8 +516,7 @@ function removeFromCart(name) {
 
             // Clear cart after payment success
             cart.length = 0;
-localStorage.removeItem('cart');
-updateCartUI();
+            updateCartUI();
           });
         },
         onError: function(err) {
