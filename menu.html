@@ -385,15 +385,88 @@ function payOnArrival() {
     // Cart management
     const cart = [];
 
-    function addToCart(name, price, image) {
-      const existing = cart.find(i => i.name === name);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        cart.push({ name, price, image, quantity: 1 });
+// Load cart from localStorage on page load
+window.onload = () => {
+  const savedCart = localStorage.getItem('cart');
+  if (savedCart) {
+    try {
+      const parsedCart = JSON.parse(savedCart);
+      if (Array.isArray(parsedCart)) {
+        cart.length = 0; // clear current cart array
+        parsedCart.forEach(item => cart.push(item));
       }
-      updateCartUI();
+    } catch (e) {
+      console.error("Error parsing cart from localStorage", e);
     }
+  }
+
+  updateCartUI();
+  loadMenu("KFC");
+};
+
+function addToCart(name, price, image) {
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1 });
+  }
+  updateCartUI();
+}
+
+function updateCartUI() {
+  // Save cart to localStorage
+  localStorage.setItem('cart', JSON.stringify(cart));
+
+  const countElem = document.getElementById("cart-count");
+  const cartItemsElem = document.getElementById("cart-items");
+  const checkoutBtn = document.getElementById("checkout-btn");
+
+  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+  if (totalQuantity > 0) {
+    countElem.style.display = "inline-block";
+    countElem.textContent = totalQuantity;
+    checkoutBtn.style.display = "block";
+  } else {
+    countElem.style.display = "none";
+    checkoutBtn.style.display = "none";
+  }
+
+  if (cart.length === 0) {
+    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+    return;
+  }
+
+  cartItemsElem.innerHTML = "";
+  cart.forEach(item => {
+    const itemDiv = document.createElement("div");
+    itemDiv.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" />
+      <div style="flex-grow:1;">
+        <strong>${item.name}</strong><br/>
+        ${item.price} x ${item.quantity}
+      </div>
+      <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
+    `;
+
+    cartItemsElem.appendChild(itemDiv);
+  });
+}
+
+function removeFromCart(name) {
+  const index = cart.findIndex(i => i.name === name);
+  if (index > -1) {
+    cart.splice(index, 1);
+    updateCartUI();
+  }
+}
+
+// Clear cart after successful checkout
+function clearCart() {
+  cart.length = 0;
+  localStorage.removeItem('cart');
+  updateCartUI();
+}
 
     function updateCartUI() {
   // Save cart to localStorage
