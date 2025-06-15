@@ -704,23 +704,52 @@ function payOnArrival() {
     orderText += items.join("\n") + "\n";
   }
 
-  const message = 
-`New KRAVIN DELIVERY Order - Pay on Arrival\n\n`;
+  function sendWhatsAppOrder() {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+
+  if (!name || !phone || !address) {
+    alert("Please fill in all the required fields.");
+    return;
+  }
+
+  let message = `New KRAVIN DELIVERY Order - Pay on Arrival\n\n`;
   message += `Name: ${name}\n`;
   message += `PHONE: ${phone}\n`;
   message += `ADDRESS: ${address}\n\n`;
   message += `ORDER DETAILS:\n`;
 
+  const restaurantGroups = {};
+  let grandTotal = 0;
+
+  cart.forEach(item => {
+    if (!restaurantGroups[item.restaurant]) {
+      restaurantGroups[item.restaurant] = [];
+    }
+    restaurantGroups[item.restaurant].push(item);
+  });
+
+  for (const [restaurant, items] of Object.entries(restaurantGroups)) {
+    message += `\nRESTAURANT: ${restaurant}\n`;
+    items.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      message += `- ${item.name} x${item.quantity} (JMD $${itemTotal})\n`;
+      grandTotal += itemTotal;
+    });
+  }
+
+  const deliveryFee = 500;
+  grandTotal += deliveryFee;
+
+  message += `\nDELIVERY FEE: JMD $${deliveryFee.toFixed(2)}\n`;
+  message += `Total: JMD $${grandTotal.toFixed(2)}\n\n`;
+  message += `Thank you!`;
+
   const encodedMessage = encodeURIComponent(message);
-
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
-
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
-
-  cart.length = 0;
-  updateCartUI();
-  saveCart();
+  const whatsappNumber = "18761234567"; // change this to your number
+  const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+  window.open(whatsappURL, "_blank");
 }
   
 </script>
