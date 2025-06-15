@@ -306,7 +306,7 @@ const firebaseConfig = {
   appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
 };
 firebase.initializeApp(firebaseConfig);
-
+  
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
@@ -357,10 +357,27 @@ function updateFeesAndTotal() {
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-// Add item to cart, enforcing single restaurant per order
+function showCustomModal(message) {
+  const modal = document.getElementById("custom-modal");
+  const modalMessage = document.getElementById("modal-message");
+
+  if (modal && modalMessage) {
+    modalMessage.textContent = message;
+    modal.style.display = "flex";
+  }
+}
+
+function hideCustomModal() {
+  const modal = document.getElementById("custom-modal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
 function addToCart(name, price, image) {
+  // If cart not empty, check restaurant consistency
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("You can only order from one restaurant at a time. Please clear your cart first.");
+    showCustomModal("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME.");
     return;
   }
 
@@ -375,14 +392,13 @@ function addToCart(name, price, image) {
   saveCart();
   updateFeesAndTotal();
 
-  // Open cart dropdown automatically
+  // Automatically open cart dropdown
   const cartDropdown = document.getElementById("cart-dropdown");
   if (cartDropdown) {
     cartDropdown.style.display = "block";
   }
 }
 
-// Remove item from cart
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
   if (index > -1) {
@@ -392,6 +408,60 @@ function removeFromCart(name) {
     updateFeesAndTotal();
   }
 }
+
+<!-- Styled Modal -->
+<style>
+#custom-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+#custom-modal .modal-content {
+  background: white;
+  padding: 25px 30px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#custom-modal .modal-content button {
+  margin-top: 20px;
+  padding: 8px 16px;
+  background: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#custom-modal .modal-content button:hover {
+  background: #e60000;
+}
+</style>
+
+<!-- Modal HTML -->
+<div id="custom-modal">
+  <div class="modal-content">
+    <div id="modal-message">YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME.</div>
+    <button onclick="hideCustomModal()">OK</button>
+  </div>
+</div>
+
+</body>
+</html>
+
 
 // Increase item quantity
 function increaseQuantity(name) {
