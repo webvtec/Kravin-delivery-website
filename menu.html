@@ -341,26 +341,28 @@ function updateFeesAndTotal() {
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
 function addToCart(name, price, image) {
-  // Check if cart contains items from a different restaurant
-  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("You can only order from one restaurant at a time. Please clear your cart first.");
-    return;
-  }
+  // If cart not empty, check restaurant consistency
+  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+    alert("You can only order from one restaurant at a time. Please clear your cart first.");
+    return;
+  }
 
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-  }
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+  }
 
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
 
-  // Open the cart dropdown
-  const cartDropdown = document.getElementById("cart-dropdown");
-  cartDropdown.style.display = "block";
+  // Open cart dropdown automatically
+  const cartDropdown = document.getElementById("cart-dropdown");
+  if (cartDropdown) {
+    cartDropdown.style.display = "block";
+  }
 }
 
 function removeFromCart(name) {
