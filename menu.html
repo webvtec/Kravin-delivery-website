@@ -300,8 +300,11 @@
     }
 
 function payOnArrival() {
-  sendOrderToWhatsApp();
-}
+  if (!checkoutForm.checkValidity()) {
+    formError.textContent = "Please fill out all required fields.";
+    formError.style.display = "block";
+    return;
+  }
 
   formError.style.display = "none";
   paymentSuccess.style.display = "block";
@@ -456,56 +459,6 @@ function payOnArrival() {
       // Clear PayPal buttons container (to re-render if needed)
       document.getElementById("paypal-button-container").innerHTML = "";
     }
-
-    function sendOrderToWhatsApp() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
-  }
-
-  formError.style.display = "none";
-
-  // Get user info from form (assuming form fields have these IDs)
-  const name = checkoutForm.querySelector("#name").value.trim();
-  const phone = checkoutForm.querySelector("#phone").value.trim();
-  const address = checkoutForm.querySelector("#address").value.trim();
-
-  if (!name || !phone || !address) {
-    formError.textContent = "Please fill out name, phone, and address.";
-    formError.style.display = "block";
-    return;
-  }
-
-  // Format cart items
-  let itemsText = "";
-  cart.forEach(item => {
-    itemsText += `\n- ${item.name} x${item.quantity} (${item.price})`;
-  });
-
-  const message = 
-`New Pay On Arrival Order!
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
-Order Items:${itemsText}
-`;
-
-  // Your WhatsApp number in international format (no + or spaces)
-  const whatsappNumber = "18763422293";
-
-  // URL encode the message for WhatsApp link
-  const encodedMessage = encodeURIComponent(message);
-
-  // Open WhatsApp chat in new tab/window
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
-
-  // Show success and clear form + cart UI
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
-  cart.length = 0;
-  updateCartUI();
-}
 
     // Calculate total amount in USD (assuming prices have $ sign and decimals)
     function calculateTotal() {
