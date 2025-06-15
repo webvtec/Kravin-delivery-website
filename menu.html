@@ -300,11 +300,49 @@
     }
 
 function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
-  }
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
+
+  if (!name || !phone || !address) {
+    formError.textContent = "Please fill out all required fields.";
+    formError.style.display = "block";
+    return;
+  }
+
+  formError.style.display = "none";
+
+  let message = `*New KRAVIN Order (Pay Upon Arrival)*\n\n`;
+  message += `*Name:* ${name}\n`;
+  message += `*Phone:* ${phone}\n`;
+  message += `*Address:* ${address}\n\n`;
+  message += `*Order Details:*\n`;
+
+  let total = 0;
+  cart.forEach(item => {
+    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
+    const lineTotal = priceNum * item.quantity;
+    total += lineTotal;
+    message += `- ${item.name} x${item.quantity} = $${lineTotal.toFixed(2)}\n`;
+  });
+
+  message += `\n*Total:* $${total.toFixed(2)}`;
+
+  // WhatsApp number (include country code, no "+" sign)
+  const phoneNumber = "18761234567"; // Replace with YOUR business number
+
+  // Encode message and open WhatsApp
+  const encodedMessage = encodeURIComponent(message);
+  const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+  window.open(whatsappURL, "_blank");
+
+  // Optionally clear cart and form
+  cart.length = 0;
+  updateCartUI();
+  checkoutForm.reset();
+  checkoutModal.style.display = "none";
+}
 
   formError.style.display = "none";
   paymentSuccess.style.display = "block";
