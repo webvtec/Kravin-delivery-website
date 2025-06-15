@@ -258,273 +258,294 @@
 </div>
 
   <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-      authDomain: "kravin-delivery-login.firebaseapp.com",
-      projectId: "kravin-delivery-login",
-      storageBucket: "kravin-delivery-login.appspot.com",
-      messagingSenderId: "1035748923136",
-      appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
-    };
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+    authDomain: "kravin-delivery-login.firebaseapp.com",
+    projectId: "kravin-delivery-login",
+    storageBucket: "kravin-delivery-login.appspot.com",
+    messagingSenderId: "1035748923136",
+    appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
+  };
 
-    firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
 
-    // Show profile + logout
-    firebase.auth().onAuthStateChanged(user => {
-      const profile = document.getElementById("user-profile");
-      if (user) {
-        const name = user.displayName || user.email.split('@')[0];
-        const email = user.email;
-        const date = new Date(user.metadata.creationTime).toLocaleDateString();
-        const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+  // Show profile + logout
+  firebase.auth().onAuthStateChanged(user => {
+    const profile = document.getElementById("user-profile");
+    if (user) {
+      const name = user.displayName || user.email.split('@')[0];
+      const email = user.email;
+      const date = new Date(user.metadata.creationTime).toLocaleDateString();
+      const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-        profile.innerHTML = `
-          <img src="${avatar}" alt="avatar" />
-          <p><strong>${name}</strong></p>
-          <p>${email}</p>
-          <p>Joined: ${date}</p>
-          <button class="logout-btn" onclick="logout()">Logout</button>
-        `;
-      } else {
-        profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-      }
-    });
-
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "login.html";
-      }).catch(error => {
-        alert("Logout failed: " + error.message);
-      });
+      profile.innerHTML = `
+        <img src="${avatar}" alt="avatar" />
+        <p><strong>${name}</strong></p>
+        <p>${email}</p>
+        <p>Joined: ${date}</p>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      `;
+    } else {
+      profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
     }
+  });
 
-function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
+  function logout() {
+    firebase.auth().signOut().then(() => {
+      window.location.href = "login.html";
+    }).catch(error => {
+      alert("Logout failed: " + error.message);
+    });
   }
 
-  formError.style.display = "none";
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
+  // --- CART PERSISTENCE FUNCTIONS ---
+  function saveCart() {
+    localStorage.setItem('kravinCart', JSON.stringify(cart));
+  }
 
-  // Optional: Send order to backend here
-
-  cart.length = 0;
-  updateCartUI();
-}
-    
-    // Toggle Menu
-    function toggleMenu() {
-      const dropdown = document.getElementById("menu-dropdown");
-      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    }
-
-    // Google Sheets setup
-    const sheets = {
-      KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
-      LasVagas: "YOUR_SHEET_ID_2",
-      Cloggys: "YOUR_SHEET_ID_3",
-      Waterloo: "YOUR_SHEET_ID_4",
-      Tastees: "YOUR_SHEET_ID_5"
-    };
-    const sheetName = "Sheet1";
-
-    function loadMenu(restaurant) {
-      const sheetId = sheets[restaurant];
-      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-      const container = document.getElementById("product-list");
-      container.innerHTML = "Loading menu...";
-
-      fetch(sheetUrl)
-        .then(res => res.json())
-        .then(data => {
-          container.innerHTML = "";
-          data.forEach(item => {
-            const product = document.createElement("div");
-            product.className = "product";
-            product.innerHTML = `
-              <img src="${item.Image}" alt="${item.Name}" />
-              <h3>${item.Name}</h3>
-              <p><strong>${item.Price}</strong></p>
-              <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-            `;
-            container.appendChild(product);
-          });
-        })
-        .catch(() => {
-          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-        });
-
-      // Hide menu after selection
-      document.getElementById("menu-dropdown").style.display = "none";
-    }
-
-    // Cart management
-    const cart = [];
-
-    function addToCart(name, price, image) {
-      const existing = cart.find(i => i.name === name);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        cart.push({ name, price, image, quantity: 1 });
-      }
+  function loadCart() {
+    const savedCart = localStorage.getItem('kravinCart');
+    if (savedCart) {
+      const parsed = JSON.parse(savedCart);
+      cart.length = 0;
+      parsed.forEach(item => cart.push(item));
       updateCartUI();
     }
+  }
 
-    function updateCartUI() {
-      const countElem = document.getElementById("cart-count");
-      const cartItemsElem = document.getElementById("cart-items");
-      const checkoutBtn = document.getElementById("checkout-btn");
+  // Pay on arrival function (with cart clear + save)
+  function payOnArrival() {
+    if (!checkoutForm.checkValidity()) {
+      formError.textContent = "Please fill out all required fields.";
+      formError.style.display = "block";
+      return;
+    }
 
-      // Update badge count
-      const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-      if (totalQuantity > 0) {
-        countElem.style.display = "inline-block";
-        countElem.textContent = totalQuantity;
-        checkoutBtn.style.display = "block";
-      } else {
-        countElem.style.display = "none";
-        checkoutBtn.style.display = "none";
-      }
+    formError.style.display = "none";
+    paymentSuccess.style.display = "block";
+    checkoutForm.style.display = "none";
 
-      // Show items in dropdown
-      if (cart.length === 0) {
-        cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-        return;
-      }
+    // Optional: Send order to backend here
 
-      cartItemsElem.innerHTML = "";
-      cart.forEach(item => {
-        const itemDiv = document.createElement("div");
-        itemDiv.innerHTML = `
-          <img src="${item.image}" alt="${item.name}" />
-          <div style="flex-grow:1;">
-            <strong>${item.name}</strong><br/>
-            ${item.price} x ${item.quantity}
-          </div>
-          <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
-        `;
+    cart.length = 0;
+    updateCartUI();
+    saveCart(); // Save cleared cart
+  }
 
-        cartItemsElem.appendChild(itemDiv);
+  // Toggle Menu
+  function toggleMenu() {
+    const dropdown = document.getElementById("menu-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  // Google Sheets setup
+  const sheets = {
+    KFC: "1PDF8T0lX7yGDxxbZMu1JuMQrhBVputNSkFdzMSYnxIA",
+    LasVagas: "YOUR_SHEET_ID_2",
+    Cloggys: "YOUR_SHEET_ID_3",
+    Waterloo: "YOUR_SHEET_ID_4",
+    Tastees: "YOUR_SHEET_ID_5"
+  };
+  const sheetName = "Sheet1";
+
+  function loadMenu(restaurant) {
+    const sheetId = sheets[restaurant];
+    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+    const container = document.getElementById("product-list");
+    container.innerHTML = "Loading menu...";
+
+    fetch(sheetUrl)
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = "";
+        data.forEach(item => {
+          const product = document.createElement("div");
+          product.className = "product";
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}" />
+            <h3>${item.Name}</h3>
+            <p><strong>${item.Price}</strong></p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+          `;
+          container.appendChild(product);
+        });
+      })
+      .catch(() => {
+        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
       });
+
+    // Hide menu after selection
+    document.getElementById("menu-dropdown").style.display = "none";
+  }
+
+  // Cart management
+  const cart = [];
+
+  function addToCart(name, price, image) {
+    const existing = cart.find(i => i.name === name);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ name, price, image, quantity: 1 });
+    }
+    updateCartUI();
+    saveCart();  // Save cart after adding
+  }
+
+  function updateCartUI() {
+    const countElem = document.getElementById("cart-count");
+    const cartItemsElem = document.getElementById("cart-items");
+    const checkoutBtn = document.getElementById("checkout-btn");
+
+    // Update badge count
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    if (totalQuantity > 0) {
+      countElem.style.display = "inline-block";
+      countElem.textContent = totalQuantity;
+      checkoutBtn.style.display = "block";
+    } else {
+      countElem.style.display = "none";
+      checkoutBtn.style.display = "none";
     }
 
-    function removeFromCart(name) {
-      const index = cart.findIndex(i => i.name === name);
-      if (index > -1) {
-        cart.splice(index, 1);
-        updateCartUI();
-      }
+    // Show items in dropdown
+    if (cart.length === 0) {
+      cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+      return;
     }
 
-    function toggleCart() {
-      const dropdown = document.getElementById("cart-dropdown");
-      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    }
+    cartItemsElem.innerHTML = "";
+    cart.forEach(item => {
+      const itemDiv = document.createElement("div");
+      itemDiv.innerHTML = `
+        <img src="${item.image}" alt="${item.name}" />
+        <div style="flex-grow:1;">
+          <strong>${item.name}</strong><br/>
+          ${item.price} x ${item.quantity}
+        </div>
+        <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
+      `;
 
-    // Close cart dropdown if click outside
-    document.addEventListener('click', function(event) {
-      const cartDropdown = document.getElementById('cart-dropdown');
-      const cartIcon = document.querySelector('.cart-icon');
-      if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-        cartDropdown.style.display = 'none';
+      cartItemsElem.appendChild(itemDiv);
+    });
+  }
+
+  function removeFromCart(name) {
+    const index = cart.findIndex(i => i.name === name);
+    if (index > -1) {
+      cart.splice(index, 1);
+      updateCartUI();
+      saveCart();  // Save cart after removal
+    }
+  }
+
+  function toggleCart() {
+    const dropdown = document.getElementById("cart-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  // Close cart dropdown if click outside
+  document.addEventListener('click', function(event) {
+    const cartDropdown = document.getElementById('cart-dropdown');
+    const cartIcon = document.querySelector('.cart-icon');
+    if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+      cartDropdown.style.display = 'none';
+    }
+  });
+
+  // Load default menu and cart on window load
+  window.onload = () => {
+    loadCart();   // <-- Load saved cart here!
+    loadMenu("KFC");
+  };
+
+  // CHECKOUT MODAL LOGIC
+  const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutForm = document.getElementById("checkout-form");
+  const formError = document.getElementById("form-error");
+  const paymentSuccess = document.getElementById("payment-success");
+
+  function openCheckout() {
+    formError.style.display = "none";
+    paymentSuccess.style.display = "none";
+    checkoutForm.style.display = "block";
+    checkoutModal.style.display = "flex";
+    renderPayPalButtons();
+  }
+
+  function closeCheckout() {
+    checkoutModal.style.display = "none";
+    // Clear form inputs
+    checkoutForm.reset();
+    // Clear PayPal buttons container (to re-render if needed)
+    document.getElementById("paypal-button-container").innerHTML = "";
+  }
+
+  // Calculate total amount in USD (assuming prices have $ sign and decimals)
+  function calculateTotal() {
+    let total = 0;
+    cart.forEach(item => {
+      // Remove $ or other symbols and parse float
+      const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
+      if (!isNaN(priceNum)) {
+        total += priceNum * item.quantity;
       }
     });
+    return total.toFixed(2);
+  }
 
-    // Load default menu
-    window.onload = () => loadMenu("KFC");
+  // Render PayPal buttons after validation
+  function renderPayPalButtons() {
+    // Clear previous buttons
+    const container = document.getElementById("paypal-button-container");
+    container.innerHTML = "";
 
-    // CHECKOUT MODAL LOGIC
-    const checkoutModal = document.getElementById("checkout-modal");
-    const checkoutForm = document.getElementById("checkout-form");
-    const formError = document.getElementById("form-error");
-    const paymentSuccess = document.getElementById("payment-success");
-
-    function openCheckout() {
-      formError.style.display = "none";
-      paymentSuccess.style.display = "none";
-      checkoutForm.style.display = "block";
-      checkoutModal.style.display = "flex";
-      renderPayPalButtons();
-    }
-
-    function closeCheckout() {
-      checkoutModal.style.display = "none";
-      // Clear form inputs
-      checkoutForm.reset();
-      // Clear PayPal buttons container (to re-render if needed)
-      document.getElementById("paypal-button-container").innerHTML = "";
-    }
-
-    // Calculate total amount in USD (assuming prices have $ sign and decimals)
-    function calculateTotal() {
-      let total = 0;
-      cart.forEach(item => {
-        // Remove $ or other symbols and parse float
-        const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
-        if (!isNaN(priceNum)) {
-          total += priceNum * item.quantity;
-        }
-      });
-      return total.toFixed(2);
-    }
-
-    // Render PayPal buttons after validation
-    function renderPayPalButtons() {
-      // Clear previous buttons
-      const container = document.getElementById("paypal-button-container");
-      container.innerHTML = "";
-
-      paypal.Buttons({
-        style: {
-          layout: 'vertical',
-          color:  'gold',
-          shape:  'rect',
-          label:  'paypal'
-        },
-        onClick: function(data, actions) {
-          // Validate form before allowing payment
-          if (!checkoutForm.checkValidity()) {
-            formError.textContent = "Please fill out all required fields correctly.";
-            formError.style.display = "block";
-            return actions.reject();
-          }
-          formError.style.display = "none";
-          return actions.resolve();
-        },
-        createOrder: function(data, actions) {
-          const total = calculateTotal();
-          return actions.order.create({
-            purchase_units: [{
-              amount: {
-                value: total
-              },
-              description: "KRAVIN DELIVERY order"
-            }]
-          });
-        },
-        onApprove: function(data, actions) {
-          return actions.order.capture().then(function(details) {
-            paymentSuccess.style.display = "block";
-            checkoutForm.style.display = "none";
-
-            // Here you can send order info to your backend or database
-
-            // Clear cart after payment success
-            cart.length = 0;
-            updateCartUI();
-          });
-        },
-        onError: function(err) {
-          formError.textContent = "Payment failed: " + err;
+    paypal.Buttons({
+      style: {
+        layout: 'vertical',
+        color:  'gold',
+        shape:  'rect',
+        label:  'paypal'
+      },
+      onClick: function(data, actions) {
+        // Validate form before allowing payment
+        if (!checkoutForm.checkValidity()) {
+          formError.textContent = "Please fill out all required fields correctly.";
           formError.style.display = "block";
+          return actions.reject();
         }
-      }).render("#paypal-button-container");
-    }
-  </script>
-</body>
-  </html>
+        formError.style.display = "none";
+        return actions.resolve();
+      },
+      createOrder: function(data, actions) {
+        const total = calculateTotal();
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: total
+            },
+            description: "KRAVIN DELIVERY order"
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          paymentSuccess.style.display = "block";
+          checkoutForm.style.display = "none";
+
+          // Here you can send order info to your backend or database
+
+          // Clear cart after payment success
+          cart.length = 0;
+          updateCartUI();
+          saveCart();  // Save cleared cart
+        });
+      },
+      onError: function(err) {
+        formError.textContent = "Payment failed: " + err;
+        formError.style.display = "block";
+      }
+    }).render("#paypal-button-container");
+  }
+</script>
