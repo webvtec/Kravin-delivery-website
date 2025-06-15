@@ -671,7 +671,12 @@ function renderPayPalButtons() {
 }
 
 // Track the current restaurant
-  let currentRestaurant = "KFC"; // default
+  let currentRestaurant = "KFC"; // default value
+
+function loadMenu(restaurant) {
+  currentRestaurant = restaurant;
+  // ... your existing menu loading code ...
+}
 
   function loadMenu(restaurant) {
     currentRestaurant = restaurant; // update current restaurant
