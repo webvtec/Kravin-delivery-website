@@ -13,6 +13,25 @@
   <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
   <style>
+    /* Style Pay Upon Arrival button */
+#checkout-form button[type="button"] {
+  background-color: #28a745; /* Bootstrap green */
+  color: white;
+  font-size: 1.2rem;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
+  margin: 20px auto 0 auto; /* centers the button horizontally */
+  width: 200px; /* makes button bigger */
+  transition: background-color 0.3s ease;
+}
+
+#checkout-form button[type="button"]:hover {
+  background-color: #218838; /* darker green on hover */
+}
+
     /* Same styles from before */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f7f7f7; padding-top: 80px; }
