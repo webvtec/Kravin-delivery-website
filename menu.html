@@ -298,268 +298,286 @@ let cart = [];
 
 // Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-  authDomain: "kravin-delivery-login.firebaseapp.com",
-  projectId: "kravin-delivery-login",
-  storageBucket: "kravin-delivery-login.appspot.com",
-  messagingSenderId: "1035748923136",
-  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
+  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+  authDomain: "kravin-delivery-login.firebaseapp.com",
+  projectId: "kravin-delivery-login",
+  storageBucket: "kravin-delivery-login.appspot.com",
+  messagingSenderId: "1035748923136",
+  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
 };
 firebase.initializeApp(firebaseConfig);
 
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
-  const address = document.getElementById("address").value.trim().toLowerCase();
+  const address = document.getElementById("address").value.trim().toLowerCase();
 
-  if (address.includes("brompton")) {
-    return 1500;
-  } else if (address.includes("black river")) {
-    return 1000;
-  } else if (address.includes("sandy ground")) {
-    return 1800;
-  } else if (address.includes("hodges")) {
-    return 1000;
-  }
-  return 0;
+  if (address.includes("brompton")) {
+    return 1500;
+  } else if (address.includes("black river")) {
+    return 1000;
+  } else if (address.includes("sandy ground")) {
+    return 1800;
+  } else if (address.includes("hodges")) {
+    return 1000;
+  }
+  return 0;
 }
 
 // Calculate total from cart items only
 function calculateCartTotal() {
-  let total = 0;
+  let total = 0;
 
-  cart.forEach(item => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
-    if (!isNaN(priceNum)) {
-      total += priceNum * item.quantity;
-    }
-  });
+  cart.forEach(item => {
+    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
+    if (!isNaN(priceNum)) {
+      total += priceNum * item.quantity;
+    }
+  });
 
-  return total;
+  return total;
 }
 
 // Update displayed delivery fee and total price
 function updateFeesAndTotal() {
-  const deliveryFee = calculateDeliveryFee();
-  const cartTotal = calculateCartTotal();
-  const grandTotal = cartTotal + deliveryFee;
+  const deliveryFee = calculateDeliveryFee();
+  const cartTotal = calculateCartTotal();
+  const grandTotal = cartTotal + deliveryFee;
 
-  const deliveryFeeElem = document.getElementById("delivery-fee");
-  if (deliveryFeeElem) {
-    deliveryFeeElem.textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
-  }
+  const deliveryFeeElem = document.getElementById("delivery-fee");
+  if (deliveryFeeElem) {
+    deliveryFeeElem.textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
+  }
 
-  const totalElem = document.getElementById("total-price");
-  if (totalElem) {
-    totalElem.textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
-  }
+  const totalElem = document.getElementById("total-price");
+  if (totalElem) {
+    totalElem.textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
+  }
 }
 
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
+// Custom styled alert function
+function showCustomAlert(message) {
+  const existing = document.getElementById("custom-alert");
+  if (existing) existing.remove();
+
+  const alertBox = document.createElement("div");
+  alertBox.id = "custom-alert";
+  alertBox.innerHTML = `
+    <div class="custom-alert-overlay">
+      <div class="custom-alert-box">
+        <p>${message}</p>
+        <button onclick="document.getElementById('custom-alert').remove()">OK</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(alertBox);
+}
+
 // Add item to cart, enforcing single restaurant per order
 function addToCart(name, price, image) {
-  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("You can only order from one restaurant at a time. Please clear your cart first.");
-    return;
-  }
+  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+    showCustomAlert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
+    return;
+  }
 
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-  }
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+  }
 
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
 
-  // Open cart dropdown automatically
-  const cartDropdown = document.getElementById("cart-dropdown");
-  if (cartDropdown) {
-    cartDropdown.style.display = "block";
-  }
+  // Open cart dropdown automatically
+  const cartDropdown = document.getElementById("cart-dropdown");
+  if (cartDropdown) {
+    cartDropdown.style.display = "block";
+  }
 }
 
 // Remove item from cart
 function removeFromCart(name) {
-  const index = cart.findIndex(i => i.name === name);
-  if (index > -1) {
-    cart.splice(index, 1);
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
+  const index = cart.findIndex(i => i.name === name);
+  if (index > -1) {
+    cart.splice(index, 1);
+    updateCartUI();
+    saveCart();
+    updateFeesAndTotal();
+  }
 }
 
 // Increase item quantity
 function increaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    item.quantity += 1;
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
+  const item = cart.find(i => i.name === name);
+  if (item) {
+    item.quantity += 1;
+    updateCartUI();
+    saveCart();
+    updateFeesAndTotal();
+  }
 }
 
 // Decrease item quantity
 function decreaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    if (item.quantity > 1) {
-      item.quantity -= 1;
-      updateCartUI();
-      saveCart();
-      updateFeesAndTotal();
-    } else {
-      removeFromCart(name);
-    }
-  }
+  const item = cart.find(i => i.name === name);
+  if (item) {
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+      updateCartUI();
+      saveCart();
+      updateFeesAndTotal();
+    } else {
+      removeFromCart(name);
+    }
+  }
 }
 
 // Update cart UI
 function updateCartUI() {
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
+  const countElem = document.getElementById("cart-count");
+  const cartItemsElem = document.getElementById("cart-items");
+  const checkoutBtn = document.getElementById("checkout-btn");
 
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
+  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+  if (totalQuantity > 0) {
+    countElem.style.display = "inline-block";
+    countElem.textContent = totalQuantity;
+    checkoutBtn.style.display = "block";
+  } else {
+    countElem.style.display = "none";
+    checkoutBtn.style.display = "none";
+  }
 
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
+  if (cart.length === 0) {
+    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+    return;
+  }
 
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.style.display = "flex";
-    itemDiv.style.alignItems = "center";
-    itemDiv.style.marginBottom = "10px";
+  cartItemsElem.innerHTML = "";
+  cart.forEach(item => {
+    const itemDiv = document.createElement("div");
+    itemDiv.style.display = "flex";
+    itemDiv.style.alignItems = "center";
+    itemDiv.style.marginBottom = "10px";
 
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
-      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
-      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
-    `;
-    cartItemsElem.appendChild(itemDiv);
-  });
+    itemDiv.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+      <div style="flex-grow:1;">
+        <strong>${item.name}</strong><br/>
+        ${item.price} x ${item.quantity}
+      </div>
+      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
+      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
+      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+    `;
+    cartItemsElem.appendChild(itemDiv);
+  });
 }
 
 // Toggle cart dropdown visibility
 function toggleCart() {
-  const dropdown = document.getElementById("cart-dropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  const dropdown = document.getElementById("cart-dropdown");
+  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
 
 // Close cart dropdown if clicked outside
 document.addEventListener('click', function(event) {
-  const cartDropdown = document.getElementById('cart-dropdown');
-  const cartIcon = document.querySelector('.cart-icon');
-  if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-    cartDropdown.style.display = 'none';
-  }
+  const cartDropdown = document.getElementById('cart-dropdown');
+  const cartIcon = document.querySelector('.cart-icon');
+  if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+    cartDropdown.style.display = 'none';
+  }
 });
 
 // Save cart to localStorage
 function saveCart() {
-  localStorage.setItem('kravinCart', JSON.stringify(cart));
+  localStorage.setItem('kravinCart', JSON.stringify(cart));
 }
 
 // Load cart from localStorage
 function loadCart() {
-  const savedCart = localStorage.getItem('kravinCart');
-  if (savedCart) {
-    cart = JSON.parse(savedCart);
-    updateCartUI();
-    updateFeesAndTotal();
-  }
+  const savedCart = localStorage.getItem('kravinCart');
+  if (savedCart) {
+    cart = JSON.parse(savedCart);
+    updateCartUI();
+    updateFeesAndTotal();
+  }
 }
 
 // Google Sheets IDs for restaurants
 const sheets = {
-  KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
-  LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
-  Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
-  Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
-  Tastees: "1kI8TWvvkWVrmv6pLn_ry5QG2uCSF-JGFP0eThry2eBE"
+  KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
+  LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
+  Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
+  Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
+  Tastees: "1kI8TWvvkWVrmv6pLn_ry5QG2uCSF-JGFP0eThry2eBE"
 };
 const sheetName = "Sheet1";
 
 // Load menu from Google Sheets for selected restaurant
 function loadMenu(restaurant) {
-  currentRestaurant = restaurant; // update current restaurant
-  const sheetId = sheets[restaurant];
-  const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-  const container = document.getElementById("product-list");
-  container.innerHTML = "Loading menu...";
+  currentRestaurant = restaurant; // update current restaurant
+  const sheetId = sheets[restaurant];
+  const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+  const container = document.getElementById("product-list");
+  container.innerHTML = "Loading menu...";
 
-  fetch(sheetUrl)
-    .then(res => res.json())
-    .then(data => {
-      container.innerHTML = "";
-      data.forEach(item => {
-        const product = document.createElement("div");
-        product.className = "product";
-        product.innerHTML = `
-          <img src="${item.Image}" alt="${item.Name}" />
-          <h3>${item.Name}</h3>
-          <p><strong>$${item.Price}</strong></p>
-          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-        `;
-        container.appendChild(product);
-      });
-    })
-    .catch(() => {
-      container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-    });
+  fetch(sheetUrl)
+    .then(res => res.json())
+    .then(data => {
+      container.innerHTML = "";
+      data.forEach(item => {
+        const product = document.createElement("div");
+        product.className = "product";
+        product.innerHTML = `
+          <img src="${item.Image}" alt="${item.Name}" />
+          <h3>${item.Name}</h3>
+          <p><strong>$${item.Price}</strong></p>
+          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+        `;
+        container.appendChild(product);
+      });
+    })
+    .catch(() => {
+      container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+    });
 
-  document.getElementById("menu-dropdown").style.display = "none";
+  document.getElementById("menu-dropdown").style.display = "none";
 }
 
 // Firebase auth state listener: show user profile or not logged in
 firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const date = new Date(user.metadata.creationTime).toLocaleDateString();
-    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+  const profile = document.getElementById("user-profile");
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    const email = user.email;
+    const date = new Date(user.metadata.creationTime).toLocaleDateString();
+    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-    profile.innerHTML = `
-      <img src="${avatar}" alt="avatar" />
-      <p><strong>${name}</strong></p>
-      <p>${email}</p>
-      <p>Joined: ${date}</p>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    `;
-  } else {
-    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
-  }
+    profile.innerHTML = `
+      <img src="${avatar}" alt="avatar" />
+      <p><strong>${name}</strong></p>
+      <p>${email}</p>
+      <p>Joined: ${date}</p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    `;
+  } else {
+    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
+  }
 });
 
 // Logout function
 function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  }).catch(error => {
-    alert("Logout failed: " + error.message);
-  });
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  }).catch(error => {
+    alert("Logout failed: " + error.message);
+  });
 }
 
 // Checkout modal and form references
@@ -570,75 +588,75 @@ const paymentSuccess = document.getElementById("payment-success");
 
 // Open checkout modal and render PayPal buttons
 function openCheckout() {
-  formError.style.display = "none";
-  paymentSuccess.style.display = "none";
-  checkoutForm.style.display = "block";
-  checkoutModal.style.display = "flex";
-  renderPayPalButtons();
+  formError.style.display = "none";
+  paymentSuccess.style.display = "none";
+  checkoutForm.style.display = "block";
+  checkoutModal.style.display = "flex";
+  renderPayPalButtons();
 }
 
 // Close checkout modal and reset form
 function closeCheckout() {
-  checkoutModal.style.display = "none";
-  checkoutForm.reset();
-  document.getElementById("paypal-button-container").innerHTML = "";
+  checkoutModal.style.display = "none";
+  checkoutForm.reset();
+  document.getElementById("paypal-button-container").innerHTML = "";
 }
 
 // Calculate total amount including delivery fee
 function calculateTotal() {
-  let total = calculateCartTotal();
-  total += calculateDeliveryFee();
-  return total.toFixed(2);
+  let total = calculateCartTotal();
+  total += calculateDeliveryFee();
+  return total.toFixed(2);
 }
 
 // Render PayPal buttons for payment
 function renderPayPalButtons() {
-  const container = document.getElementById("paypal-button-container");
-  container.innerHTML = "";
+  const container = document.getElementById("paypal-button-container");
+  container.innerHTML = "";
 
-  paypal.Buttons({
-    style: {
-      layout: 'vertical',
-      color:  'gold',
-      shape:  'rect',
-      label:  'paypal'
-    },
-    onClick: function(data, actions) {
-      if (!checkoutForm.checkValidity()) {
-        formError.textContent = "Please fill out all required fields correctly.";
-        formError.style.display = "block";
-        return actions.reject();
-      }
-      formError.style.display = "none";
-      return actions.resolve();
-    },
-    createOrder: function(data, actions) {
-      const total = calculateTotal();
-      return actions.order.create({
-        purchase_units: [{
-          amount: {
-            value: total
-          },
-          description: "KRAVIN DELIVERY order"
-        }]
-      });
-    },
-    onApprove: function(data, actions) {
-      return actions.order.capture().then(function(details) {
-        paymentSuccess.style.display = "block";
-        checkoutForm.style.display = "none";
+  paypal.Buttons({
+    style: {
+      layout: 'vertical',
+      color:  'gold',
+      shape:  'rect',
+      label:  'paypal'
+    },
+    onClick: function(data, actions) {
+      if (!checkoutForm.checkValidity()) {
+        formError.textContent = "Please fill out all required fields correctly.";
+        formError.style.display = "block";
+        return actions.reject();
+      }
+      formError.style.display = "none";
+      return actions.resolve();
+    },
+    createOrder: function(data, actions) {
+      const total = calculateTotal();
+      return actions.order.create({
+        purchase_units: [{
+          amount: {
+            value: total
+          },
+          description: "KRAVIN DELIVERY order"
+        }]
+      });
+    },
+    onApprove: function(data, actions) {
+      return actions.order.capture().then(function(details) {
+        paymentSuccess.style.display = "block";
+        checkoutForm.style.display = "none";
 
-        cart.length = 0;
-        updateCartUI();
-        saveCart();
-        updateFeesAndTotal();
-      });
-    },
-    onError: function(err) {
-      formError.textContent = "Payment failed: " + err;
-      formError.style.display = "block";
-    }
-  }).render("#paypal-button-container");
+        cart.length = 0;
+        updateCartUI();
+        saveCart();
+        updateFeesAndTotal();
+      });
+    },
+    onError: function(err) {
+      formError.textContent = "Payment failed: " + err;
+      formError.style.display = "block";
+    }
+  }).render("#paypal-button-container");
 }
 
 // WhatsApp number for "Pay Upon Arrival" (without +)
@@ -646,33 +664,33 @@ const whatsappNumber = "18763422293";
 
 // Pay on Arrival function sends order details via WhatsApp
 function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
-  }
+  if (!checkoutForm.checkValidity()) {
+    formError.textContent = "Please fill out all required fields.";
+    formError.style.display = "block";
+    return;
+  }
 
-  formError.style.display = "none";
+  formError.style.display = "none";
 
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
-  if (cart.length === 0) {
-    formError.textContent = "Your cart is empty!";
-    formError.style.display = "block";
-    return;
-  }
+  if (cart.length === 0) {
+    formError.textContent = "Your cart is empty!";
+    formError.style.display = "block";
+    return;
+  }
 
-  let orderText = "";
-  cart.forEach(item => {
-    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-  });
+  let orderText = "";
+  cart.forEach(item => {
+    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+  });
 
-  const deliveryFee = calculateDeliveryFee();
-  const total = calculateTotal();
+  const deliveryFee = calculateDeliveryFee();
+  const total = calculateTotal();
 
-  const message = 
+  const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
 
 Restaurant: ${currentRestaurant}
@@ -687,30 +705,81 @@ Grand Total: JMD $${total}
 
 Thank you!`;
 
-  const encodedMessage = encodeURIComponent(message);
+  const encodedMessage = encodeURIComponent(message);
 
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
+  paymentSuccess.style.display = "block";
+  checkoutForm.style.display = "none";
 
-  cart.length = 0;
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
+  cart.length = 0;
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
 }
 
 // Toggle menu dropdown
 function toggleMenu() {
-  const dropdown = document.getElementById("menu-dropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  const dropdown = document.getElementById("menu-dropdown");
+  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
 
 // Load default menu and cart on page load
 window.onload = () => {
-  loadMenu("KFC");
-  loadCart();
+  loadMenu("KFC");
+  loadCart();
 };
+</script>
+
+<style>
+.custom-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.custom-alert-box {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+.custom-alert-box p {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #cc0000;
+  text-transform: uppercase;
+}
+
+.custom-alert-box button {
+  padding: 8px 16px;
+  background-color: #cc0000;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.custom-alert-box button:hover {
+  background-color: #a30000;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>
 </script>
 </body>
 </html>
