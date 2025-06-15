@@ -290,6 +290,23 @@
 <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
 <script>
+// Track the current restaurant (default)
+let currentRestaurant = "KFC";
+
+// Cart array
+let cart = [];
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+  authDomain: "kravin-delivery-login.firebaseapp.com",
+  projectId: "kravin-delivery-login",
+  storageBucket: "kravin-delivery-login.appspot.com",
+  messagingSenderId: "1035748923136",
+  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
+};
+firebase.initializeApp(firebaseConfig);
+
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
@@ -340,8 +357,8 @@ function updateFeesAndTotal() {
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
+// Add item to cart, enforcing single restaurant per order
 function addToCart(name, price, image) {
-  // If cart not empty, check restaurant consistency
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
     alert("You can only order from one restaurant at a time. Please clear your cart first.");
     return;
@@ -365,6 +382,7 @@ function addToCart(name, price, image) {
   }
 }
 
+// Remove item from cart
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
   if (index > -1) {
@@ -375,54 +393,105 @@ function removeFromCart(name) {
   }
 }
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-  authDomain: "kravin-delivery-login.firebaseapp.com",
-  projectId: "kravin-delivery-login",
-  storageBucket: "kravin-delivery-login.appspot.com",
-  messagingSenderId: "1035748923136",
-  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-// Show profile + logout
-firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    const email = user.email;
-    const date = new Date(user.metadata.creationTime).toLocaleDateString();
-    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
-
-    profile.innerHTML = `
-      <img src="${avatar}" alt="avatar" />
-      <p><strong>${name}</strong></p>
-      <p>${email}</p>
-      <p>Joined: ${date}</p>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    `;
-  } else {
-    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
+// Increase item quantity
+function increaseQuantity(name) {
+  const item = cart.find(i => i.name === name);
+  if (item) {
+    item.quantity += 1;
+    updateCartUI();
+    saveCart();
+    updateFeesAndTotal();
   }
-});
+}
 
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  }).catch(error => {
-    alert("Logout failed: " + error.message);
+// Decrease item quantity
+function decreaseQuantity(name) {
+  const item = cart.find(i => i.name === name);
+  if (item) {
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+      updateCartUI();
+      saveCart();
+      updateFeesAndTotal();
+    } else {
+      removeFromCart(name);
+    }
+  }
+}
+
+// Update cart UI
+function updateCartUI() {
+  const countElem = document.getElementById("cart-count");
+  const cartItemsElem = document.getElementById("cart-items");
+  const checkoutBtn = document.getElementById("checkout-btn");
+
+  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+  if (totalQuantity > 0) {
+    countElem.style.display = "inline-block";
+    countElem.textContent = totalQuantity;
+    checkoutBtn.style.display = "block";
+  } else {
+    countElem.style.display = "none";
+    checkoutBtn.style.display = "none";
+  }
+
+  if (cart.length === 0) {
+    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+    return;
+  }
+
+  cartItemsElem.innerHTML = "";
+  cart.forEach(item => {
+    const itemDiv = document.createElement("div");
+    itemDiv.style.display = "flex";
+    itemDiv.style.alignItems = "center";
+    itemDiv.style.marginBottom = "10px";
+
+    itemDiv.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+      <div style="flex-grow:1;">
+        <strong>${item.name}</strong><br/>
+        ${item.price} x ${item.quantity}
+      </div>
+      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
+      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
+      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+    `;
+    cartItemsElem.appendChild(itemDiv);
   });
 }
 
-// Toggle Menu
-function toggleMenu() {
-  const dropdown = document.getElementById("menu-dropdown");
+// Toggle cart dropdown visibility
+function toggleCart() {
+  const dropdown = document.getElementById("cart-dropdown");
   dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
 
-// Google Sheets setup
+// Close cart dropdown if clicked outside
+document.addEventListener('click', function(event) {
+  const cartDropdown = document.getElementById('cart-dropdown');
+  const cartIcon = document.querySelector('.cart-icon');
+  if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+    cartDropdown.style.display = 'none';
+  }
+});
+
+// Save cart to localStorage
+function saveCart() {
+  localStorage.setItem('kravinCart', JSON.stringify(cart));
+}
+
+// Load cart from localStorage
+function loadCart() {
+  const savedCart = localStorage.getItem('kravinCart');
+  if (savedCart) {
+    cart = JSON.parse(savedCart);
+    updateCartUI();
+    updateFeesAndTotal();
+  }
+}
+
+// Google Sheets IDs for restaurants
 const sheets = {
   KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
   LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
@@ -432,7 +501,9 @@ const sheets = {
 };
 const sheetName = "Sheet1";
 
+// Load menu from Google Sheets for selected restaurant
 function loadMenu(restaurant) {
+  currentRestaurant = restaurant; // update current restaurant
   const sheetId = sheets[restaurant];
   const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
   const container = document.getElementById("product-list");
@@ -461,129 +532,35 @@ function loadMenu(restaurant) {
   document.getElementById("menu-dropdown").style.display = "none";
 }
 
-// Cart management and persistence with localStorage
-let cart = [];
+// Firebase auth state listener: show user profile or not logged in
+firebase.auth().onAuthStateChanged(user => {
+  const profile = document.getElementById("user-profile");
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    const email = user.email;
+    const date = new Date(user.metadata.creationTime).toLocaleDateString();
+    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-function saveCart() {
-  localStorage.setItem('kravinCart', JSON.stringify(cart));
-}
-
-function loadCart() {
-  const savedCart = localStorage.getItem('kravinCart');
-  if (savedCart) {
-    cart = JSON.parse(savedCart);
-    updateCartUI();
-  }
-}
-
-function addToCart(name, price, image) {
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1 });
-  }
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
-}
-
-// Updated updateCartUI function with plus and minus buttons:
-function updateCartUI() {
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
-
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
-
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
-
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.style.display = "flex";
-    itemDiv.style.alignItems = "center";
-    itemDiv.style.marginBottom = "10px";
-
-    // Prevent clicks on buttons from closing dropdown by stopping event propagation
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
-      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
-      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+    profile.innerHTML = `
+      <img src="${avatar}" alt="avatar" />
+      <p><strong>${name}</strong></p>
+      <p>${email}</p>
+      <p>Joined: ${date}</p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     `;
-    cartItemsElem.appendChild(itemDiv);
-  });
-}
-
-// New functions to increase or decrease quantity:
-function increaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    item.quantity += 1;
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
-}
-
-function decreaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    if (item.quantity > 1) {
-      item.quantity -= 1;
-      updateCartUI();
-      saveCart();
-      updateFeesAndTotal();
-    } else {
-      removeFromCart(name);
-    }
-  }
-}
-
-function removeFromCart(name) {
-  const index = cart.findIndex(i => i.name === name);
-  if (index > -1) {
-    cart.splice(index, 1);
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
-}
-
-function toggleCart() {
-  const dropdown = document.getElementById("cart-dropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-}
-
-document.addEventListener('click', function(event) {
-  const cartDropdown = document.getElementById('cart-dropdown');
-  const cartIcon = document.querySelector('.cart-icon');
-  if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-    cartDropdown.style.display = 'none';
+  } else {
+    profile.innerHTML = "<p style='color:red;'>Not logged in</p>";
   }
 });
 
-// Load default menu & cart on page load
-window.onload = () => {
-  loadMenu("KFC");
-  loadCart();
-};
+// Logout function
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  }).catch(error => {
+    alert("Logout failed: " + error.message);
+  });
+}
 
 // Checkout modal and form references
 const checkoutModal = document.getElementById("checkout-modal");
@@ -591,6 +568,7 @@ const checkoutForm = document.getElementById("checkout-form");
 const formError = document.getElementById("form-error");
 const paymentSuccess = document.getElementById("payment-success");
 
+// Open checkout modal and render PayPal buttons
 function openCheckout() {
   formError.style.display = "none";
   paymentSuccess.style.display = "none";
@@ -599,30 +577,21 @@ function openCheckout() {
   renderPayPalButtons();
 }
 
+// Close checkout modal and reset form
 function closeCheckout() {
   checkoutModal.style.display = "none";
   checkoutForm.reset();
   document.getElementById("paypal-button-container").innerHTML = "";
 }
 
+// Calculate total amount including delivery fee
 function calculateTotal() {
-  let total = 0;
-
-  // Calculate cart items total
-  cart.forEach(item => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
-    if (!isNaN(priceNum)) {
-      total += priceNum * item.quantity;
-    }
-  });
-
-  // Add delivery fee
-  const deliveryFee = calculateDeliveryFee();
-  total += deliveryFee;
-
+  let total = calculateCartTotal();
+  total += calculateDeliveryFee();
   return total.toFixed(2);
 }
 
+// Render PayPal buttons for payment
 function renderPayPalButtons() {
   const container = document.getElementById("paypal-button-container");
   container.innerHTML = "";
@@ -672,48 +641,11 @@ function renderPayPalButtons() {
   }).render("#paypal-button-container");
 }
 
-// Track the current restaurant
-  let currentRestaurant = "KFC"; // default value
+// WhatsApp number for "Pay Upon Arrival" (without +)
+const whatsappNumber = "18763422293";
 
-function loadMenu(restaurant) {
-  currentRestaurant = restaurant;
-  // ... your existing menu loading code ...
-}
-
-  function loadMenu(restaurant) {
-    currentRestaurant = restaurant; // update current restaurant
-    const sheetId = sheets[restaurant];
-    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-    const container = document.getElementById("product-list");
-    container.innerHTML = "Loading menu...";
-
-    fetch(sheetUrl)
-      .then(res => res.json())
-      .then(data => {
-        container.innerHTML = "";
-        data.forEach(item => {
-          const product = document.createElement("div");
-          product.className = "product";
-          product.innerHTML = `
-            <img src="${item.Image}" alt="${item.Name}" />
-            <h3>${item.Name}</h3>
-            <p><strong>$${item.Price}</strong></p>
-            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-          `;
-          container.appendChild(product);
-        });
-      })
-      .catch(() => {
-        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-      });
-
-    document.getElementById("menu-dropdown").style.display = "none";
-  }
-
-  // WhatsApp number for "Pay Upon Arrival"
-  const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number without '+'
-
-  function payOnArrival() {
+// Pay on Arrival function sends order details via WhatsApp
+function payOnArrival() {
   if (!checkoutForm.checkValidity()) {
     formError.textContent = "Please fill out all required fields.";
     formError.style.display = "block";
@@ -765,8 +697,20 @@ Thank you!`;
   cart.length = 0;
   updateCartUI();
   saveCart();
+  updateFeesAndTotal();
 }
-  
+
+// Toggle menu dropdown
+function toggleMenu() {
+  const dropdown = document.getElementById("menu-dropdown");
+  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+}
+
+// Load default menu and cart on page load
+window.onload = () => {
+  loadMenu("KFC");
+  loadCart();
+};
 </script>
 </body>
 </html>
