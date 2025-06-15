@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
   <!-- PayPal SDK -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
 
   <style>
     /* Style Pay Upon Arrival button */
@@ -411,6 +411,7 @@
         <div style="flex-grow:1;">
           <strong>${item.name}</strong><br/>
           ${item.price} x ${item.quantity}
+        <div id="paypal-button-container"></div>
         </div>
         <button class="remove-item" onclick="removeFromCart('${item.name}')">&times;</button>
       `;
