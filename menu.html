@@ -639,36 +639,70 @@ function renderPayPalButtons() {
   }).render("#paypal-button-container");
 }
 
-// WhatsApp number for "Pay Upon Arrival"
-const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number in international format without '+'
+// Track the current restaurant
+  let currentRestaurant = "KFC"; // default
 
-function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
+  function loadMenu(restaurant) {
+    currentRestaurant = restaurant; // update current restaurant
+    const sheetId = sheets[restaurant];
+    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+    const container = document.getElementById("product-list");
+    container.innerHTML = "Loading menu...";
+
+    fetch(sheetUrl)
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = "";
+        data.forEach(item => {
+          const product = document.createElement("div");
+          product.className = "product";
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}" />
+            <h3>${item.Name}</h3>
+            <p><strong>$${item.Price}</strong></p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+          `;
+          container.appendChild(product);
+        });
+      })
+      .catch(() => {
+        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+      });
+
+    document.getElementById("menu-dropdown").style.display = "none";
   }
 
-  formError.style.display = "none";
+  // WhatsApp number for "Pay Upon Arrival"
+  const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number without '+'
 
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
+  function payOnArrival() {
+    if (!checkoutForm.checkValidity()) {
+      formError.textContent = "Please fill out all required fields.";
+      formError.style.display = "block";
+      return;
+    }
 
-  if (cart.length === 0) {
-    formError.textContent = "Your cart is empty!";
-    formError.style.display = "block";
-    return;
-  }
+    formError.style.display = "none";
 
-  let orderText = "";
-  cart.forEach(item => {
-    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-  });
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
 
-  const message = 
+    if (cart.length === 0) {
+      formError.textContent = "Your cart is empty!";
+      formError.style.display = "block";
+      return;
+    }
+
+    let orderText = "";
+    cart.forEach(item => {
+      orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+    });
+
+    const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
 
+Restaurant: ${currentRestaurant}
 Name: ${name}
 Phone: ${phone}
 Address: ${address}
@@ -678,17 +712,24 @@ ${orderText}
 
 Thank you!`;
 
-  const encodedMessage = encodeURIComponent(message);
+    const encodedMessage = encodeURIComponent(message);
 
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
+    paymentSuccess.style.display = "block";
+    checkoutForm.style.display = "none";
 
-  cart.length = 0;
-  updateCartUI();
-  saveCart();
-}
+    cart.length = 0;
+    updateCartUI();
+    saveCart();
+  }
+
+  // Make sure to call loadMenu("KFC") or whichever default on page load
+  window.onload = () => {
+    loadMenu("KFC");
+    loadCart();
+  };
+  
 </script>
 </body>
 </html>
