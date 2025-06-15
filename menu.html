@@ -705,23 +705,11 @@ function payOnArrival() {
   }
 
   const message = 
-`New KRAVIN DELIVERY Order - Pay on Arrival
-
-Name: Jason
-PHONE: 8761234567
-ADDRESS: Half Way Tree
-
-ORDER DETAILS:
-RESTURANT: KFC
-- Zinger Combo x1 (JMD $900)
-
-RESTURANT: CLOGGY'S
-- Jerk Chicken x2 (JMD $650)
-
-DELIVERY FEE: JMD $500.00
-Total: JMD $2700.00
-
-Thank you!`;
+`New KRAVIN DELIVERY Order - Pay on Arrival\n\n`;
+  message += `Name: ${name}\n`;
+  message += `PHONE: ${phone}\n`;
+  message += `ADDRESS: ${address}\n\n`;
+  message += `ORDER DETAILS:\n`;
 
   const encodedMessage = encodeURIComponent(message);
 
