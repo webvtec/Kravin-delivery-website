@@ -341,15 +341,20 @@ function updateFeesAndTotal() {
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
 function addToCart(name, price, image) {
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1 });
-  }
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1 });
+  }
+
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
+
+  // Open the cart dropdown
+  const cartDropdown = document.getElementById("cart-dropdown");
+  cartDropdown.style.display = "block";
 }
 
 function removeFromCart(name) {
