@@ -561,48 +561,45 @@
         });
       },
       onApprove: function(data, actions) {
-        return actions.order.capture().then(function(details) {
-          paymentSuccess.style.display = "block";
-          checkoutForm.style.display = "none";
+  return actions.order.capture().then(function(details) {
+    // Show payment success message & hide form
+    paymentSuccess.style.display = "block";
+    checkoutForm.style.display = "none";
 
-          cart.length = 0;
-          updateCartUI();
-          saveCart();
-        });
-      },
-      onError: function(err) {
-        formError.textContent = "Payment failed: " + err;
-        formError.style.display = "block";
-      }
-    }).render("#paypal-button-container");
-  }
-
-  // WhatsApp number for "Pay Upon Arrival"
-  const whatsappNumber = "18763422293"; // Replace with your real WhatsApp number in international format without '+'
-
-  function payOnArrival() {
-    if (!checkoutForm.checkValidity()) {
-      formError.textContent = "Please fill out all required fields.";
-      formError.style.display = "block";
-      return;
-    }
-
-    formError.style.display = "none";
-
+    // Prepare WhatsApp message
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
-
-    if (cart.length === 0) {
-      formError.textContent = "Your cart is empty!";
-      formError.style.display = "block";
-      return;
-    }
 
     let orderText = "";
     cart.forEach(item => {
       orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
     });
+
+    const message = 
+`New KRAVIN DELIVERY Order - Paid via PayPal
+
+Name: ${name}
+Phone: ${phone}
+Address: ${address}
+
+Order Details:
+${orderText}
+
+Thank you!`;
+
+    const encodedMessage = encodeURIComponent(message);
+
+    // Open WhatsApp chat with your number
+    const whatsappNumber = "18763422293"; // your number here
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+
+    // Clear cart
+    cart.length = 0;
+    updateCartUI();
+    saveCart();
+  });
+},
 
     const message = 
 `New KRAVIN DELIVERY Order - Pay on Arrival
