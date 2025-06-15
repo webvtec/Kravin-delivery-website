@@ -277,17 +277,6 @@
 <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
 <script>
-let currentRestaurant = "KFC"; // default
-
-// Your other global variables like:
-// const cart = [];
-// const whatsappNumber = "1xxxxxxxxxx";
-
-function loadMenu(restaurant) {
-  currentRestaurant = restaurant; // ✅ track the restaurant
-  // ... your existing menu loading logic
-}
-  
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
@@ -338,22 +327,16 @@ function updateFeesAndTotal() {
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-function addToCart(item) {
-  const existingItem = cart.find(cartItem => cartItem.name === item.name);
-
-  if (existingItem) {
-    existingItem.quantity += 1;
+function addToCart(name, price, image) {
+  const existing = cart.find(i => i.name === name);
+  if (existing) {
+    existing.quantity += 1;
   } else {
-    cart.push({
-      name: item.name,
-      price: item.price,
-      quantity: 1,
-      restaurant: currentRestaurant // ✅ attach restaurant
-    });
+    cart.push({ name, price, image, quantity: 1 });
   }
-
   updateCartUI();
   saveCart();
+  updateFeesAndTotal();
 }
 
 function removeFromCart(name) {
@@ -678,80 +661,34 @@ function payOnArrival() {
     return;
   }
 
-  let total = 0;
-  const restaurantGroups = {};
-
-  cart.forEach(item => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
-    if (!isNaN(priceNum)) {
-      total += priceNum * item.quantity;
-    }
-
-    if (!restaurantGroups[item.restaurant]) {
-      restaurantGroups[item.restaurant] = [];
-    }
-
-    restaurantGroups[item.restaurant].push(`- ${item.name} x${item.quantity} (${item.price})`);
-  });
-
-  const deliveryFee = calculateDeliveryFee();
-  total += deliveryFee;
-
   let orderText = "";
-
-  for (const [restaurant, items] of Object.entries(restaurantGroups)) {
-    orderText += `\nRestaurant: ${restaurant}\n`;
-    orderText += items.join("\n") + "\n";
-  }
-
-  function sendWhatsAppOrder() {
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
-
-  if (!name || !phone || !address) {
-    alert("Please fill in all the required fields.");
-    return;
-  }
-
-  let message = `New KRAVIN DELIVERY Order - Pay on Arrival\n\n`;
-  message += `Name: ${name}\n`;
-  message += `PHONE: ${phone}\n`;
-  message += `ADDRESS: ${address}\n\n`;
-  message += `ORDER DETAILS:\n`;
-
-  const restaurantGroups = {};
-  let grandTotal = 0;
-
   cart.forEach(item => {
-    if (!restaurantGroups[item.restaurant]) {
-      restaurantGroups[item.restaurant] = [];
-    }
-    restaurantGroups[item.restaurant].push(item);
+    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
   });
 
-  for (const [restaurant, items] of Object.entries(restaurantGroups)) {
-    message += `\nRESTAURANT: ${restaurant}\n`;
-    items.forEach(item => {
-      const itemTotal = item.price * item.quantity;
-      message += `- ${item.name} x${item.quantity} (JMD $${itemTotal})\n`;
-      grandTotal += itemTotal;
-    });
-  }
+  const message = 
+`New KRAVIN DELIVERY Order - Pay on Arrival
 
-  const deliveryFee = 500;
-  grandTotal += deliveryFee;
+Name: ${name}
+Phone: ${phone}
+Address: ${address}
 
-  message += `\nDELIVERY FEE: JMD $${deliveryFee.toFixed(2)}\n`;
-  message += `Total: JMD $${grandTotal.toFixed(2)}\n\n`;
-  message += `Thank you!`;
+Order Details:
+${orderText}
+
+Thank you!`;
 
   const encodedMessage = encodeURIComponent(message);
-  const whatsappNumber = "18761234567"; // change this to your number
-  const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-  window.open(whatsappURL, "_blank");
+
+  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+
+  paymentSuccess.style.display = "block";
+  checkoutForm.style.display = "none";
+
+  cart.length = 0;
+  updateCartUI();
+  saveCart();
 }
-  
 </script>
 </body>
 </html>
