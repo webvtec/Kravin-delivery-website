@@ -459,14 +459,6 @@ function removeFromCart(name) {
     cart.splice(index, 1);
     updateCartUI();
   }
-}
-
-// Clear cart after successful checkout
-function clearCart() {
-  cart.length = 0;
-  localStorage.removeItem('cart');
-  updateCartUI();
-}
 
     function updateCartUI() {
   // Save cart to localStorage
