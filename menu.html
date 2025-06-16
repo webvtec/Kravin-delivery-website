@@ -320,6 +320,18 @@ phoneInput.addEventListener("input", () => {
     }
   });
 
+  // Prevent form submit if phone number invalid
+  checkoutForm.addEventListener("submit", function (e) {
+    const digitsOnly = phoneInput.value.replace(/\D/g, "");
+    if (digitsOnly.length !== 10) {
+      e.preventDefault();  // Stop form submission
+      errorMessage.textContent = "Phone number must be exactly 10 digits.";
+      phoneInput.focus();  // Focus input so user fixes it
+    } else {
+      errorMessage.textContent = "";
+    }
+  });
+
   // Stub function for payOnArrival
   function payOnArrival() {
     const digitsOnly = phoneInput.value.replace(/\D/g, "");
@@ -330,8 +342,6 @@ phoneInput.addEventListener("input", () => {
     }
     document.getElementById("form-error").style.display = "none";
     document.getElementById("payment-success").style.display = "block";
-
-    // Add your Firebase order submission logic here
   }
 
   // Track the current restaurant (default)
