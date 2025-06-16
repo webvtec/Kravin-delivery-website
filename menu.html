@@ -8,6 +8,8 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   
 <!-- Google API client -->
   <script src="https://apis.google.com/js/api.js"></script>
@@ -755,34 +757,195 @@ window.onload = () => {
   loadCart();
 };
 
-  // Show added to cart popup
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  // Show popup when item added to cart
   function showAddedToCartPopup() {
-  let popup = document.getElementById("added-popup");
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "added-popup";
-    popup.textContent = "ADDED TO CART";
-    popup.style.position = "fixed";
-    popup.style.bottom = "20px";
-    popup.style.right = "20px";
-    popup.style.backgroundColor = "#28a745";
-    popup.style.color = "#fff";
-    popup.style.padding = "12px 20px";
-    popup.style.borderRadius = "8px";
-    popup.style.fontWeight = "bold";
-    popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-    popup.style.zIndex = "9999";
-    document.body.appendChild(popup);
+    let popup = document.getElementById("added-popup");
+    if (!popup) {
+      popup = document.createElement("div");
+      popup.id = "added-popup";
+      popup.textContent = "ADDED TO CART";
+      popup.style.position = "fixed";
+      popup.style.bottom = "20px";
+      popup.style.right = "20px";
+      popup.style.backgroundColor = "#28a745";
+      popup.style.color = "#fff";
+      popup.style.padding = "12px 20px";
+      popup.style.borderRadius = "8px";
+      popup.style.fontWeight = "bold";
+      popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+      popup.style.zIndex = "9999";
+      document.body.appendChild(popup);
+    }
+
+    popup.style.opacity = "1";
+
+    setTimeout(() => {
+      popup.style.transition = "opacity 0.5s";
+      popup.style.opacity = "0";
+    }, 1500);
   }
 
-  popup.style.opacity = "1";
+  // Generate PDF Blob of the order
+  async function generateOrderPDF(orderData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-  setTimeout(() => {
-    popup.style.transition = "opacity 0.5s";
-    popup.style.opacity = "0";
-  }, 1500);
-}
+    doc.setFontSize(16);
+    doc.text("Order Receipt", 20, 20);
 
+    doc.setFontSize(12);
+    doc.text(`Name: ${orderData.name}`, 20, 40);
+    doc.text(`Phone: ${orderData.phone}`, 20, 50);
+    doc.text(`Address: ${orderData.address}`, 20, 60);
+    doc.text(`Restaurant: ${orderData.restaurant}`, 20, 70);
+
+    let y = 90;
+    doc.text("Items:", 20, y);
+    orderData.items.forEach(item => {
+      y += 10;
+      doc.text(`- ${item.name} x${item.quantity} : JMD $${item.price}`, 25, y);
+    });
+
+    y += 20;
+    doc.text(`Delivery Fee: JMD $${orderData.deliveryFee}`, 20, y);
+    y += 10;
+    doc.text(`Total Price: JMD $${orderData.totalPrice}`, 20, y);
+
+    // Return the PDF as a blob
+    return doc.output("blob");
+  }
+
+  // Upload PDF to Google Drive and return file ID
+  async function uploadPDFToDrive(pdfBlob, fileName) {
+    const accessToken = gapi.auth.getToken().access_token;
+
+    const metadata = {
+      name: fileName,
+      mimeType: 'application/pdf',
+      // Optional: put your folder ID here if you want to upload inside a specific folder
+      // parents: ['YOUR_FOLDER_ID_HERE']
+    };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', pdfBlob);
+
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+      method: 'POST',
+      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+      body: form
+    });
+
+    const data = await response.json();
+    if (data.id) {
+      console.log('File uploaded with ID:', data.id);
+      return data.id;
+    } else {
+      throw new Error('Failed to upload file: ' + JSON.stringify(data));
+    }
+  }
+
+  // Create a shareable link with view-only permissions
+  async function createShareableLink(fileId) {
+    const accessToken = gapi.auth.getToken().access_token;
+
+    // Set permission to anyone with the link can view
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        role: 'reader',
+        type: 'anyone'
+      })
+    });
+
+    // Return the sharable link
+    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+  }
+
+  // Collect order data from your form and cart variables
+  function getOrderData() {
+    return {
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      restaurant: currentRestaurant,
+      items: cart, // your cart array [{name, quantity, price}, ...]
+      deliveryFee: deliveryFeeValue, // your delivery fee variable
+      totalPrice: totalPriceValue  // your total price variable
+    };
+  }
+
+  // Main function to be called on order submit
+  async function submitOrder() {
+    // Validate phone number length exactly 10 digits
+    const phoneDigits = document.getElementById('phone').value.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    // Optionally validate other fields here...
+
+    // Prepare order data
+    const orderData = getOrderData();
+
+    try {
+      // Generate PDF blob
+      const pdfBlob = await generateOrderPDF(orderData);
+
+      // Create file name with timestamp
+      const fileName = `Order_${orderData.name}_${Date.now()}.pdf`;
+
+      // Upload to Drive
+      const fileId = await uploadPDFToDrive(pdfBlob, fileName);
+
+      // Create shareable link
+      const shareLink = await createShareableLink(fileId);
+
+      // Now you can send shareLink via WhatsApp message or display to user
+      console.log("Order PDF share link:", shareLink);
+
+      // Example: open WhatsApp with message containing the link
+      const whatsappNumber = "YOUR_WHATSAPP_NUMBER"; // set delivery contact number
+      const message = encodeURIComponent(`New order from ${orderData.name}.\nView order PDF: ${shareLink}`);
+      window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+
+      // Show success message in your form
+      document.getElementById("payment-success").style.display = "block";
+
+      // Optionally clear cart or form here
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      alert("Error processing your order. Please try again.");
+    }
+  }
+
+  // Hook submitOrder to your Pay Upon Arrival button click or form submission:
+  document.getElementById('checkout-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // prevent default form submit
+    submitOrder();
+  });
+
+  // Also disable submission if phone number invalid on input/change (optional)
+  const phoneInput = document.getElementById('phone');
+  phoneInput.addEventListener('input', () => {
+    const digits = phoneInput.value.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      phoneInput.setCustomValidity("Phone number must be exactly 10 digits.");
+    } else {
+      phoneInput.setCustomValidity("");
+    }
+  });
+
+</script>
+  
 </script>
 </body>
 </html>
