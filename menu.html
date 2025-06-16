@@ -11,7 +11,35 @@
   
 <!-- Google API client -->
   <script src="https://apis.google.com/js/api.js"></script>
+  
+<script>
+  // Load the client and auth2 libraries
+  function loadClient() {
+    gapi.load('client:auth2', initClient);
+  }
 
+  // Initialize the client with your API key and OAuth client ID
+  function initClient() {
+    gapi.client.init({
+      apiKey: 'AIzaSyCCw0v9ur5iGRe87bBMuTgS4DOw6roqXck',          // Replace with your API key
+      clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',      // Replace with your OAuth client ID
+      scope: 'https://www.googleapis.com/auth/drive.file'  // Permission to create and manage files created by your app
+    }).then(() => {
+      // Check if user is already signed in
+      if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+        // Prompt user to sign in
+        gapi.auth2.getAuthInstance().signIn();
+      }
+    }).catch((error) => {
+      console.error('Error initializing Google API client:', error);
+    });
+  }
+
+  // Call loadClient when the page is ready
+  window.onload = function() {
+    loadClient();
+  };
+</script>
   
   <style>
     /* Style Pay Upon Arrival button */
