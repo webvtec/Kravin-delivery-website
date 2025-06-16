@@ -713,6 +713,10 @@ Thank you!`;
 // WhatsApp number for "Pay Upon Arrival" (without +)
 const whatsappNumber = "18763422293";
 
+<!-- WhatsApp number for sending order (no plus sign) -->
+<script>
+const whatsappNumber = "18763422293";
+
 // Render PayPal buttons for payment
 function renderPayPalButtons() {
   const container = document.getElementById("paypal-button-container");
@@ -811,8 +815,8 @@ window.onload = () => {
   loadCart();
 };
 
-  // Show added to cart popup
-  function showAddedToCartPopup() {
+// Show added to cart popup
+function showAddedToCartPopup() {
   let popup = document.getElementById("added-popup");
   if (!popup) {
     popup = document.createElement("div");
@@ -838,7 +842,6 @@ window.onload = () => {
     popup.style.opacity = "0";
   }, 1500);
 }
-
 </script>
 </body>
 </html>
