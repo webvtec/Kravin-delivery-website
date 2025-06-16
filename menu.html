@@ -9,9 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id=AX3N8YLk6DawF3ssEjg0Z425K7flO-oOQBgUdTxQHXSP-x2j1HeYZH2akonlUoZA1fUuKX8Kf1dKbNL0&currency=USD"></script>
-
   <style>
     /* Style Pay Upon Arrival button */
 #checkout-form button[type="button"] {
@@ -277,17 +274,11 @@
 <p id="delivery-fee">Delivery Fee: JMD $0.00</p>
 <p id="total-price">Total: JMD $0.00</p> 
 
-  <!-- Pay with PayPal button container -->
-<div id="paypal-button-container"></div>
-
 <!-- Pay Upon Arrival button -->
 <button type="button" onclick="payOnArrival()">Pay Upon Arrival</button>
 
 <p id="form-error" style="color:red; display:none;"></p>
 <p id="payment-success" style="color:green; display:none;">Order received! Thank you.</p>
-
-<!-- Add PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
 <script>
 // Track the current restaurant (default)
@@ -609,7 +600,6 @@ function openCheckout() {
   paymentSuccess.style.display = "none";
   checkoutForm.style.display = "block";
   checkoutModal.style.display = "flex";
-  renderPayPalButtons();
 }
 
 // Close checkout modal and reset form
@@ -624,94 +614,6 @@ function calculateTotal() {
   let total = calculateCartTotal();
   total += calculateDeliveryFee();
   return total.toFixed(2);
-}
-
-// Render PayPal buttons for payment
-function renderPayPalButtons() {
-  const container = document.getElementById("paypal-button-container");
-  container.innerHTML = "";
-
-  paypal.Buttons({
-    style: {
-      layout: 'vertical',
-      color:  'gold',
-      shape:  'rect',
-      label:  'paypal'
-    },
-    onClick: function(data, actions) {
-      if (!checkoutForm.checkValidity()) {
-        formError.textContent = "Please fill out all required fields correctly.";
-        formError.style.display = "block";
-        return actions.reject();
-      }
-      formError.style.display = "none";
-      return actions.resolve();
-    },
-    createOrder: async function(data, actions) {
-  const exchangeRate = await fetchExchangeRate(); // Get live USD to JMD rate
-  const totalJMD = calculateTotal();              // Your total in JMD
-  const totalUSD = (totalJMD / exchangeRate).toFixed(2); // Convert to USD
-
-  return actions.order.create({
-    purchase_units: [{
-      amount: {
-        value: totalUSD,
-        currency_code: "USD" // PayPal accepts USD
-      },
-      description: "KRAVIN DELIVERY order"
-    }]
-  });
-},
-    onApprove: function(data, actions) {
-      return actions.order.capture().then(function(details) {
-        paymentSuccess.style.display = "block";
-        checkoutForm.style.display = "none";
-
-        // Build WhatsApp message
-        const name = document.getElementById("name").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const address = document.getElementById("address").value.trim();
-
-        let orderText = "";
-        cart.forEach(item => {
-          orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-        });
-
-        const deliveryFee = calculateDeliveryFee();
-        const total = calculateTotal();
-
-        const message = 
-`New KRAVIN DELIVERY Order - Paid via PayPal
-
-Restaurant: ${currentRestaurant}
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
-
-Order Details:
-${orderText}
-Delivery Fee: JMD $${deliveryFee.toFixed(2)}
-Grand Total: JMD $${total}
-
-Thank you!`;
-
-        const encodedMessage = encodeURIComponent(message);
-
-        // Open WhatsApp chat
-        window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
-
-        // Clear cart and update UI
-        cart.length = 0;
-        updateCartUI();
-        saveCart();
-        updateFeesAndTotal();
-      });
-    },
-    onError: function(err) {
-      formError.textContent = "Payment failed: " + err;
-      formError.style.display = "block";
-    }
-  }).render("#paypal-button-container");
 }
 
 // WhatsApp number for "Pay Upon Arrival" (without +)
