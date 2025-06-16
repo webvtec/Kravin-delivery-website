@@ -820,33 +820,32 @@ window.onload = () => {
 
   // Upload PDF to Google Drive and return file ID
   async function uploadPDFToDrive(pdfBlob, fileName) {
-    const accessToken = gapi.auth.getToken().access_token;
+  const accessToken = gapi.auth.getToken().access_token;
 
-    const metadata = {
-      name: fileName,
-      mimeType: 'application/pdf',
-      // Optional: put your folder ID here if you want to upload inside a specific folder
-      // parents: ['YOUR_FOLDER_ID_HERE']
-    };
+  const metadata = {
+    name: fileName,
+    mimeType: 'application/pdf',
+    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0']
+  };
 
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', pdfBlob);
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', pdfBlob);
 
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method: 'POST',
-      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-      body: form
-    });
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+    method: 'POST',
+    headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+    body: form
+  });
 
-    const data = await response.json();
-    if (data.id) {
-      console.log('File uploaded with ID:', data.id);
-      return data.id;
-    } else {
-      throw new Error('Failed to upload file: ' + JSON.stringify(data));
-    }
+  const data = await response.json();
+  if (data.id) {
+    console.log('File uploaded with ID:', data.id);
+    return data.id;
+  } else {
+    throw new Error('Failed to upload file: ' + JSON.stringify(data));
   }
+}
 
   // Create a shareable link with view-only permissions
   async function createShareableLink(fileId) {
@@ -913,7 +912,7 @@ window.onload = () => {
       console.log("Order PDF share link:", shareLink);
 
       // Example: open WhatsApp with message containing the link
-      const whatsappNumber = "YOUR_WHATSAPP_NUMBER"; // set delivery contact number
+      const whatsappNumber = "18763422293"; // set delivery contact number
       const message = encodeURIComponent(`New order from ${orderData.name}.\nView order PDF: ${shareLink}`);
       window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
 
