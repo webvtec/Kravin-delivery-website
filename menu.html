@@ -290,43 +290,24 @@
 <!-- JavaScript -->
 <script>
   const phoneInput = document.getElementById("phone");
-const errorMessage = document.getElementById("error-message");
+  const errorMessage = document.getElementById("error-message");
 
-phoneInput.addEventListener("input", () => {
-  let digits = phoneInput.value.replace(/\D/g, "").substring(0, 10);
-  let formatted = "";
+  phoneInput.addEventListener("input", () => {
+    let digits = phoneInput.value.replace(/\D/g, "").substring(0, 10);
+    let formatted = "";
 
-  if (digits.length > 0) formatted += "(" + digits.substring(0, 3);
-  if (digits.length >= 4) formatted += ") " + digits.substring(3, 6);
-  if (digits.length >= 7) formatted += "-" + digits.substring(6, 10);
+    if (digits.length > 0) formatted += "(" + digits.substring(0, 3);
+    if (digits.length >= 4) formatted += ") " + digits.substring(3, 6);
+    if (digits.length >= 7) formatted += "-" + digits.substring(6, 10);
 
-  phoneInput.value = formatted;
-
-  // Live validation error message
-  if (digits.length < 10) {
-    errorMessage.textContent = "Phone number must be exactly 10 digits.";
-  } else {
-    errorMessage.textContent = "";
-  }
-});
+    phoneInput.value = formatted;
+  });
 
   document.getElementById("checkout-form").addEventListener("submit", function (e) {
     const digitsOnly = phoneInput.value.replace(/\D/g, "");
     if (digitsOnly.length !== 10) {
       e.preventDefault();
       errorMessage.textContent = "Phone number must be exactly 10 digits.";
-    } else {
-      errorMessage.textContent = "";
-    }
-  });
-
-  // Prevent form submit if phone number invalid
-  checkoutForm.addEventListener("submit", function (e) {
-    const digitsOnly = phoneInput.value.replace(/\D/g, "");
-    if (digitsOnly.length !== 10) {
-      e.preventDefault();  // Stop form submission
-      errorMessage.textContent = "Phone number must be exactly 10 digits.";
-      phoneInput.focus();  // Focus input so user fixes it
     } else {
       errorMessage.textContent = "";
     }
@@ -342,6 +323,8 @@ phoneInput.addEventListener("input", () => {
     }
     document.getElementById("form-error").style.display = "none";
     document.getElementById("payment-success").style.display = "block";
+
+    // Add your Firebase order submission logic here
   }
 
   // Track the current restaurant (default)
