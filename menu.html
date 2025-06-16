@@ -313,9 +313,6 @@
     }
   });
 
-  // Track the current restaurant (default)
-  let currentRestaurant = "KFC";
-
   // Stub function for payOnArrival
   function payOnArrival() {
     const digitsOnly = phoneInput.value.replace(/\D/g, "");
@@ -326,26 +323,28 @@
     }
     document.getElementById("form-error").style.display = "none";
     document.getElementById("payment-success").style.display = "block";
-    // You can add your order submission logic here
+
+    // Add your Firebase order submission logic here
+  }
+
+  // Track the current restaurant (default)
+  let currentRestaurant = "KFC";
+
+  // Cart array
+  let cart = [];
+
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+    authDomain: "kravin-delivery-login.firebaseapp.com",
+    projectId: "kravin-delivery-login",
+    storageBucket: "kravin-delivery-login.appspot.com",
+    messagingSenderId: "1035748923136",
+    appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
   };
-<script>
-  
-// Track the current restaurant (default)
-let currentRestaurant = "KFC";
 
-// Cart array
-let cart = [];
-
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-  authDomain: "kravin-delivery-login.firebaseapp.com",
-  projectId: "kravin-delivery-login",
-  storageBucket: "kravin-delivery-login.appspot.com",
-  messagingSenderId: "1035748923136",
-  appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
-};
-firebase.initializeApp(firebaseConfig);
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
 
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
