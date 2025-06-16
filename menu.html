@@ -361,18 +361,6 @@ function updateFeesAndTotal() {
   }
 }
 
-  // Fetch real-time exchange rate from USD to JMD
-async function fetchExchangeRate() {
-  try {
-    const response = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=JMD');
-    const data = await response.json();
-    return data.rates.JMD;
-  } catch (error) {
-    console.error("Error fetching exchange rate:", error);
-    return 155; // fallback exchange rate
-  }
-}
-
 // Update fees and total when address changes
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
