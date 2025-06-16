@@ -582,22 +582,6 @@ const checkoutForm = document.getElementById("checkout-form");
 const formError = document.getElementById("form-error");
 const paymentSuccess = document.getElementById("payment-success");
 
-// Open checkout modal and render PayPal buttons
-function openCheckout() {
-  formError.style.display = "none";
-  paymentSuccess.style.display = "none";
-  checkoutForm.style.display = "block";
-  checkoutModal.style.display = "flex";
-  renderPayPalButtons();
-}
-
-// Close checkout modal and reset form
-function closeCheckout() {
-  checkoutModal.style.display = "none";
-  checkoutForm.reset();
-  document.getElementById("paypal-button-container").innerHTML = "";
-}
-
 // Calculate total amount including delivery fee
 function calculateTotal() {
   let total = calculateCartTotal();
