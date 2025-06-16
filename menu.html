@@ -646,7 +646,7 @@ function renderPayPalButtons() {
       description: "KRAVIN DELIVERY order"
     }]
   });
-}
+},
     onApprove: function(data, actions) {
       return actions.order.capture().then(function(details) {
         paymentSuccess.style.display = "block";
