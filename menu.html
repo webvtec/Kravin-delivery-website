@@ -273,13 +273,22 @@
       <label for="address">Address:</label>
       <textarea id="address" name="address" required></textarea>
 
-      <button type="submit">Submit Order</button>
+      <!-- Delivery & Total -->
+      <p id="delivery-fee">Delivery Fee: JMD $0.00</p>
+      <p id="total-price">Total: JMD $0.00</p>
+
+      <!-- Payment Button -->
+      <button type="button" onclick="payOnArrival()">PAY UPON ARRIVAL</button>
+
+      <!-- Messages -->
+      <p id="form-error" style="color:red; display:none;"></p>
+      <p id="payment-success" style="color:green; display:none;">Order received! Thank you.</p>
     </form>
   </div>
 </div>
 
-<!-- Phone Validation Script -->
-  <script>
+<!-- JavaScript -->
+<script>
   const phoneInput = document.getElementById("phone");
   const errorMessage = document.getElementById("error-message");
 
@@ -304,17 +313,23 @@
     }
   });
 
-  <!-- Add these lines near your total price display area in the checkout form -->
-<p id="delivery-fee">Delivery Fee: JMD $0.00</p>
-<p id="total-price">Total: JMD $0.00</p> 
+  // Track the current restaurant (default)
+  let currentRestaurant = "KFC";
 
-<!-- Pay Upon Arrival button -->
-<button type="button" onclick="payOnArrival()">PAY UPON ARRIVAL</button>
-
-<p id="form-error" style="color:red; display:none;"></p>
-<p id="payment-success" style="color:green; display:none;">Order received! Thank you.</p>
-
+  // Stub function for payOnArrival
+  function payOnArrival() {
+    const digitsOnly = phoneInput.value.replace(/\D/g, "");
+    if (digitsOnly.length !== 10) {
+      document.getElementById("form-error").textContent = "Phone number must be exactly 10 digits.";
+      document.getElementById("form-error").style.display = "block";
+      return;
+    }
+    document.getElementById("form-error").style.display = "none";
+    document.getElementById("payment-success").style.display = "block";
+    // You can add your order submission logic here
+  }
 <script>
+  
 // Track the current restaurant (default)
 let currentRestaurant = "KFC";
 
