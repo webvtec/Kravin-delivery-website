@@ -647,40 +647,28 @@ function renderPayPalButtons() {
       formError.style.display = "none";
       return actions.resolve();
     },
-    createOrder: async function(data, actions) {
-  const exchangeRate = await fetchExchangeRate(); // Get live USD to JMD rate
-  const totalJMD = calculateTotal();              // Your total in JMD
-  const totalUSD = (totalJMD / exchangeRate).toFixed(2); // Convert to USD
-
+    createOrder: function(data, actions) {
   return actions.order.create({
     purchase_units: [{
       amount: {
-        value: totalUSD,
-        currency_code: "USD" // PayPal accepts USD
-      },
-      description: "KRAVIN DELIVERY order"
+        value: totalUsdAmount.toFixed(2), // total in USD, e.g. "15.00"
+        currency_code: 'USD'
+      }
     }]
   });
 },
     onApprove: function(data, actions) {
   return actions.order.capture().then(function(details) {
-    console.log("🧾 PayPal details:", details);
+    // Show payment success UI
+    paymentSuccess.style.display = "block";
+    checkoutForm.style.display = "none";
 
-    if (details.status !== "COMPLETED") {
-      alert("⚠️ Payment was not completed. Please try again.");
-      return;
-    }
+    // Gather form data
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
 
-    // Show success message
-    if (paymentSuccess) paymentSuccess.style.display = "block";
-    if (checkoutForm) checkoutForm.style.display = "none";
-
-    // Get customer input values
-    const name = document.getElementById("name")?.value.trim() || "N/A";
-    const phone = document.getElementById("phone")?.value.trim() || "N/A";
-    const address = document.getElementById("address")?.value.trim() || "N/A";
-
-    // Build order message
+    // Build order text
     let orderText = "";
     cart.forEach(item => {
       orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
@@ -689,6 +677,7 @@ function renderPayPalButtons() {
     const deliveryFee = calculateDeliveryFee();
     const total = calculateTotal();
 
+    // Construct WhatsApp message
     const message = 
 `New KRAVIN DELIVERY Order - Paid via PayPal
 
@@ -700,31 +689,26 @@ Address: ${address}
 Order Details:
 ${orderText}
 Delivery Fee: JMD $${deliveryFee.toFixed(2)}
-Grand Total: JMD $${total.toFixed(2)}
+Grand Total: JMD $${total}
 
 Thank you!`;
 
-    // Encode and open WhatsApp chat
     const encodedMessage = encodeURIComponent(message);
-    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    window.open(whatsappURL, "_blank");
+
+    // Open WhatsApp chat in new tab/window
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
     // Clear cart and update UI
     cart.length = 0;
     updateCartUI();
     saveCart();
     updateFeesAndTotal();
+
   }).catch(function(err) {
-    console.error("❌ PayPal capture failed:", err);
-    alert("Payment failed. Please try again.");
+    console.error("Capture error:", err);
+    alert("Payment capture failed. Please try again.");
   });
 },
-    onError: function(err) {
-      formError.textContent = "Payment failed: " + err;
-      formError.style.display = "block";
-    }
-  }).render("#paypal-button-container");
-}
 
 // WhatsApp number for "Pay Upon Arrival" (without +)
 const whatsappNumber = "18763422293";
