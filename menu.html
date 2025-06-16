@@ -635,6 +635,40 @@ function renderPayPalButtons() {
         paymentSuccess.style.display = "block";
         checkoutForm.style.display = "none";
 
+        // Build WhatsApp message
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const address = document.getElementById("address").value.trim();
+
+        let orderText = "";
+        cart.forEach(item => {
+          orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+        });
+
+        const deliveryFee = calculateDeliveryFee();
+        const total = calculateTotal();
+
+        const message = 
+`New KRAVIN DELIVERY Order - Paid via PayPal
+
+Restaurant: ${currentRestaurant}
+Name: ${name}
+Phone: ${phone}
+Address: ${address}
+
+Order Details:
+${orderText}
+Delivery Fee: JMD $${deliveryFee.toFixed(2)}
+Grand Total: JMD $${total}
+
+Thank you!`;
+
+        const encodedMessage = encodeURIComponent(message);
+
+        // Open WhatsApp chat
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+
+        // Clear cart and update UI
         cart.length = 0;
         updateCartUI();
         saveCart();
