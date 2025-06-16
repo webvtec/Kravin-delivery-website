@@ -663,24 +663,26 @@ function renderPayPalButtons() {
   });
 },
     onApprove: function(data, actions) {
-      return actions.order.capture().then(function(details) {
-        paymentSuccess.style.display = "block";
-        checkoutForm.style.display = "none";
+  return actions.order.capture().then(function(details) {
+    if (details.status !== "COMPLETED") {
+      console.warn("⚠️ Payment not completed");
+      return;
+    }
 
-        // Build WhatsApp message
-        const name = document.getElementById("name").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const address = document.getElementById("address").value.trim();
+    // ✅ Payment success — send WhatsApp message
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
 
-        let orderText = "";
-        cart.forEach(item => {
-          orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-        });
+    let orderText = "";
+    cart.forEach(item => {
+      orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+    });
 
-        const deliveryFee = calculateDeliveryFee();
-        const total = calculateTotal();
+    const deliveryFee = calculateDeliveryFee();
+    const total = calculateTotal();
 
-        const message = 
+    const message = 
 `New KRAVIN DELIVERY Order - Paid via PayPal
 
 Restaurant: ${currentRestaurant}
@@ -695,18 +697,20 @@ Grand Total: JMD $${total}
 
 Thank you!`;
 
-        const encodedMessage = encodeURIComponent(message);
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
 
-        // Open WhatsApp chat
-        window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+    // ✅ Hide checkout, show success
+    paymentSuccess.style.display = "block";
+    checkoutForm.style.display = "none";
 
-        // Clear cart and update UI
-        cart.length = 0;
-        updateCartUI();
-        saveCart();
-        updateFeesAndTotal();
-      });
-    },
+    // Clear cart
+    cart.length = 0;
+    updateCartUI();
+    saveCart();
+    updateFeesAndTotal();
+  });
+}
     onError: function(err) {
       formError.textContent = "Payment failed: " + err;
       formError.style.display = "block";
