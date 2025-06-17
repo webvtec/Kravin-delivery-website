@@ -695,6 +695,37 @@ function calculateTotal() {
 // WhatsApp number for "Pay Upon Arrival" (without +)
 const whatsappNumber = "18763422293";
 
+async function initGoogleApi() {
+  return new Promise((resolve, reject) => {
+    gapi.load('client:auth2', async () => {
+      try {
+        await gapi.client.init({
+          clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+          scope: 'https://www.googleapis.com/auth/drive.file'
+        });
+        const authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance.isSignedIn.get()) {
+          await authInstance.signIn({prompt: 'none'});
+        }
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+// Call this on window load and await before enabling your payOnArrival
+window.onload = async () => {
+  try {
+    await initGoogleApi();
+    console.log('Google API initialized successfully');
+  } catch (err) {
+    console.error('Failed to initialize Google API:', err);
+  }
+};
+  
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
   const name = document.getElementById("name").value.trim();
