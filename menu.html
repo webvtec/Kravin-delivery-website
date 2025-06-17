@@ -545,7 +545,12 @@ async function payOnArrival() {
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  alert("Order Received:\n" + orderDetails);
+  // Format WhatsApp URL
+  const whatsappNumber = "18763422293"; // Replace this with your WhatsApp number
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderDetails)}`;
+
+  // Open WhatsApp message
+  window.open(whatsappUrl, '_blank');
 
   document.getElementById("payment-success").style.display = "block";
 
