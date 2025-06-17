@@ -532,11 +532,11 @@ async function payOnArrival() {
   const address = document.getElementById("address").value.trim();
 
   if (name === "" || phone === "" || address === "") {
-    document.getElementById("form-error").textContent = "Please fill out all fields.";
-    document.getElementById("form-error").style.display = "block";
+    const fe = document.getElementById("form-error");
+    fe.textContent = "Please fill out all fields.";
+    fe.style.display = "block";
     return;
   }
-
   document.getElementById("form-error").style.display = "none";
 
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
@@ -545,59 +545,33 @@ async function payOnArrival() {
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  const fileBlob = new Blob([orderDetails], { type: 'text/plain' });
-  const file = new File([fileBlob], `Order_${name}_${Date.now()}.txt`);
+  const formData = new FormData();
+  formData.append("file", new Blob([orderDetails], { type: "text/plain" }), `Order_${name}_${Date.now()}.txt`);
 
   try {
-    // Step 1: Get the best server
-    const serverResponse = await fetch('https://api.gofile.io/getServer');
-    const serverData = await serverResponse.json();
-
-    if (serverData.status !== 'ok') {
-      alert('Failed to get upload server. Please try again.');
-      return;
-    }
-
-    const uploadServer = serverData.data.server;
-
-    // Step 2: Upload the file to the correct server
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const uploadResponse = await fetch(`https://${uploadServer}.gofile.io/uploadFile`, {
-      method: 'POST',
+    const resp = await fetch("https://file.io", {
+      method: "POST",
       body: formData
     });
+    const json = await resp.json();
 
-    const uploadResult = await uploadResponse.json();
-
-    if (uploadResult.status !== "ok") {
-      alert('Upload failed. Please try again.');
+    if (!json.success || !json.link) {
+      alert("Upload failed. Please try again.");
       return;
     }
 
-    const downloadLink = uploadResult.data.downloadPage;
-
-    // Step 3: Open WhatsApp with the file link
-    const whatsappNumber = "18763422293"; // Replace with your WhatsApp number
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order%20Received:%20${encodeURIComponent(downloadLink)}`;
-
-    window.open(whatsappUrl, '_blank');
+    const link = json.link;
+    const whatsappNumber = "18763422293"; // Your WhatsApp number
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order:%20${encodeURIComponent(link)}`;
+    window.open(whatsappUrl, "_blank");
 
     document.getElementById("payment-success").style.display = "block";
+    cart = []; saveCart(); updateCartUI(); updateFeesAndTotal();
 
-    cart = [];
-    saveCart();
-    updateCartUI();
-    updateFeesAndTotal();
-
-    setTimeout(() => {
-      closeCheckout();
-    }, 2000);
-
-  } catch (error) {
-    alert('Something went wrong while uploading the order.');
-    console.error(error);
+    setTimeout(closeCheckout, 2000);
+  } catch (err) {
+    alert("Upload error. Try again later.");
+    console.error(err);
   }
 }
 </script>
