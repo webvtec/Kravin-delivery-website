@@ -679,16 +679,23 @@ function calculateTotal() {
 const whatsappNumber = "18763422293";
 
 let tokenClient;
+let accessToken = null;
 
 async function initGoogleApi() {
+async function initGoogleApi() {
   return new Promise((resolve, reject) => {
-    // Load the gapi client library for Drive API discovery
+    if (!window.gapi || !window.google?.accounts?.oauth2) {
+      return reject(new Error("Required Google APIs not loaded"));
+    }
+
     gapi.load('client', async () => {
       try {
+        // Initialize Drive API client with discovery doc
         await gapi.client.init({
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
-        // Initialize the token client from Google Identity Services
+
+        // Initialize the token client from GIS
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
           scope: 'https://www.googleapis.com/auth/drive.file',
@@ -701,7 +708,8 @@ async function initGoogleApi() {
             }
           },
         });
-        // Request an access token silently, no prompt if possible
+
+        // Request an access token silently if possible (no prompt)
         tokenClient.requestAccessToken({ prompt: '' });
       } catch (e) {
         reject(e);
@@ -711,70 +719,49 @@ async function initGoogleApi() {
 }
 
 async function uploadToDrive(blob, filename) {
-  alert("📤 Uploading to Google Drive...");
+  if (!accessToken) throw new Error("No access token");
 
-  try {
-    // Use the global accessToken obtained via GIS
-    if (!accessToken) {
-      alert("❌ No access token. Please authorize first.");
-      throw new Error("No access token");
-    }
+  const metadata = {
+    name: filename,
+    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // Your folder ID here
+    mimeType: 'application/pdf',
+  };
 
-    const metadata = {
-      name: filename,
-      parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // your folder ID
-      mimeType: 'application/pdf',
-    };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
 
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", blob);
+  // Upload file
+  const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + accessToken },
+    body: form,
+  });
 
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: new Headers({ Authorization: "Bearer " + accessToken }),
-      body: form,
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      alert("❌ Upload failed: " + errorText);
-      console.error("Upload failed:", errorText);
-      throw new Error(errorText);
-    }
-
-    const file = await res.json();
-    alert("✅ File uploaded! Now making it public...");
-
-    // Set permissions to public
-    const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        role: "reader",
-        type: "anyone",
-      }),
-    });
-
-    if (!permRes.ok) {
-      const permError = await permRes.text();
-      alert("❌ Setting permissions failed: " + permError);
-      console.error("Permission setting failed:", permError);
-      throw new Error(permError);
-    }
-
-    const link = `https://drive.google.com/file/d/${file.id}/view`;
-    alert("✅ Public link ready: " + link);
-    return link;
-
-  } catch (err) {
-    alert("❌ Upload or permission failed: " + err.message);
-    console.error(err);
-    throw err;
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    throw new Error('Upload failed: ' + errText);
   }
+
+  const file = await uploadRes.json();
+
+  // Set file permission to public
+  const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+  });
+
+  if (!permRes.ok) {
+    const errText = await permRes.text();
+    throw new Error('Permission setting failed: ' + errText);
+  }
+
+  // Return public file URL
+  return `https://drive.google.com/file/d/${file.id}/view`;
 }
   
 // Call this on window load and await before enabling your payOnArrival
@@ -863,88 +850,62 @@ function initGoogleIdentity() {
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
   try {
-    await initGoogleApi();  // Initialize Google API first
-  } catch (err) {
-    alert("Failed to initialize Google API. Please try again.");
-    console.error("Google API init failed:", err);
-    return; // Stop further execution
-  }
+    await initGoogleApi();
 
-  const name = document.getElementById("name").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const address = document.getElementById("address").value.trim();
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
 
-  if (!name || !phone || !address) {
-    formError.textContent = "Please fill out all fields.";
-    formError.style.display = "block";
-    return;
-  }
-  formError.style.display = "none";
+    if (!name || !phone || !address) {
+      alert("Please fill out all form fields.");
+      return;
+    }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 10;
-  doc.text(`Order for: ${name}`, 10, y); y += 10;
-  doc.text(`Phone: ${phone}`, 10, y); y += 10;
-  doc.text(`Address: ${address}`, 10, y); y += 10;
-  doc.text("Items:", 10, y); y += 10;
+    // Generate PDF with jsPDF (make sure jsPDF is included in your page)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-  let total = 0;
-  cart.forEach(item => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ""));
-    const itemTotal = priceNum * item.quantity;
-    total += itemTotal;
-    doc.text(`${item.name} x${item.quantity} - $${itemTotal.toFixed(2)}`, 10, y);
-    y += 10;
-  });
+    let y = 10;
+    doc.text(`Order for: ${name}`, 10, y); y += 10;
+    doc.text(`Phone: ${phone}`, 10, y); y += 10;
+    doc.text(`Address: ${address}`, 10, y); y += 10;
+    doc.text('Items:', 10, y); y += 10;
 
-  const deliveryFee = calculateDeliveryFee();
-  const grandTotal = total + deliveryFee;
-
-  doc.text(`Delivery Fee: $${deliveryFee.toFixed(2)}`, 10, y); y += 10;
-  doc.text(`Total: $${grandTotal.toFixed(2)}`, 10, y); y += 10;
-
-  const pdfBlob = doc.output("blob");
-
-  // 🔐 Ensure we have an access token before uploading
-  if (!accessToken) {
-    await new Promise((resolve, reject) => {
-      tokenClient.callback = (resp) => {
-        if (resp.error) {
-          alert("❌ Authorization failed");
-          console.error("Auth error:", resp);
-          reject(resp);
-          return;
-        }
-        accessToken = resp.access_token;
-        console.log("✅ Token received:", accessToken);
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
+    let total = 0;
+    cart.forEach(item => {
+      const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ''));
+      const itemTotal = priceNum * item.quantity;
+      total += itemTotal;
+      doc.text(`${item.name} x${item.quantity} - $${itemTotal.toFixed(2)}`, 10, y);
+      y += 10;
     });
-  }
 
-  try {
-    // Upload PDF to Google Drive folder with name based on customer and timestamp
-    const link = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`, accessToken);
+    const deliveryFee = calculateDeliveryFee();
+    const grandTotal = total + deliveryFee;
 
-    // Open WhatsApp with the generated PDF link
-    const whatsappMsg = `Hi, I just placed an order! Here's my order PDF: ${link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
+    doc.text(`Delivery Fee: $${deliveryFee.toFixed(2)}`, 10, y); y += 10;
+    doc.text(`Total: $${grandTotal.toFixed(2)}`, 10, y);
 
-    // Show success and clear cart
-    paymentSuccess.style.display = "block";
-    checkoutForm.style.display = "none";
+    const pdfBlob = doc.output('blob');
 
+    // Upload to Drive and get public link
+    const fileLink = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`);
+
+    // Open WhatsApp with pre-filled message containing the Drive link
+    const message = `Hi, I just placed an order! Here's my order PDF: ${fileLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+
+    alert("Order processed! WhatsApp window opened.");
+
+    // Clear your cart and update UI accordingly
     cart.length = 0;
     updateCartUI();
     saveCart();
     updateFeesAndTotal();
 
-  } catch (error) {
-    formError.textContent = "Failed to upload order PDF. Please try again.";
-    formError.style.display = "block";
-    console.error("Upload to Drive error:", error);
+  } catch (err) {
+    alert("Error: " + (err.message || JSON.stringify(err)));
+    console.error(err);
   }
 }
   
