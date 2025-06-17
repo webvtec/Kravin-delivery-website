@@ -95,18 +95,15 @@
     });
 
     // Google Sign-In
-    document.getElementById("googleSignInBtn").addEventListener("click", () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({
-        client_id: "589261423405-l6meqi1qa55isv08k3q35g8d5b7n6liv.apps.googleusercontent.com"
-      });
+document.getElementById("googleSignInBtn").addEventListener("click", () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-      auth.signInWithPopup(provider)
-        .then(() => {
-          window.location.href = "index.html";
-        })
-        .catch(e => alert("Google login error: " + e.message));
-    });
+  auth.signInWithPopup(provider)
+    .then(() => {
+      window.location.href = "index.html";
+    })
+    .catch(e => alert("Google login error: " + e.message));
+});
 
     // Redirect if already logged in
     auth.onAuthStateChanged(user => {
