@@ -539,27 +539,36 @@ async function payOnArrival() {
 
   document.getElementById("form-error").style.display = "none";
 
-  // Build the order details
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
   cart.forEach(item => {
     orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  // Convert to a Blob
   const fileBlob = new Blob([orderDetails], { type: 'text/plain' });
   const file = new File([fileBlob], `Order_${name}_${Date.now()}.txt`);
 
-  // Prepare FormData
-  const formData = new FormData();
-  formData.append('file', file);
-
   try {
-    // Upload to GoFile.io
-    const uploadResponse = await fetch('https://api.gofile.io/uploadFile', {
+    // Step 1: Get the best server
+    const serverResponse = await fetch('https://api.gofile.io/getServer');
+    const serverData = await serverResponse.json();
+
+    if (serverData.status !== 'ok') {
+      alert('Failed to get upload server. Please try again.');
+      return;
+    }
+
+    const uploadServer = serverData.data.server;
+
+    // Step 2: Upload the file to the correct server
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const uploadResponse = await fetch(`https://${uploadServer}.gofile.io/uploadFile`, {
       method: 'POST',
       body: formData
     });
+
     const uploadResult = await uploadResponse.json();
 
     if (uploadResult.status !== "ok") {
@@ -569,7 +578,7 @@ async function payOnArrival() {
 
     const downloadLink = uploadResult.data.downloadPage;
 
-    // Open WhatsApp with the link
+    // Step 3: Open WhatsApp with the file link
     const whatsappNumber = "18763422293"; // Replace with your WhatsApp number
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order%20Received:%20${encodeURIComponent(downloadLink)}`;
 
