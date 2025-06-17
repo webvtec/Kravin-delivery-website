@@ -79,12 +79,17 @@
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          window.location.href = "index.html";
-        })
-        .catch(e => alert("Login error: " + e.message));
-    });
-
+  .then(() => {
+    window.location.href = "index.html";
+  })
+  .catch(e => {
+    if (e.code === 'auth/invalid-login-credentials' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+      alert("Invalid Email or Password.");
+    } else {
+      alert("Login error: " + e.message);
+    }
+  });
+      
     // Email Sign Up
     document.getElementById("signupBtn").addEventListener("click", () => {
       const email = document.getElementById("email").value;
