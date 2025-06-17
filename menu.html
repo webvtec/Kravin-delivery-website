@@ -195,7 +195,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="initGoogleAuth(); loadMenu('KFC'); loadCart();">
 
   <!-- Menu Icon -->
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
@@ -290,7 +290,6 @@
   </div>
 </div>
 
-  <body onload="initGoogleAuth()">
     <!-- JavaScript -->
 <script>
   const phoneInput = document.getElementById("phone");
@@ -641,11 +640,6 @@
     }, 1500);
   }
 
-  window.onload = () => {
-    initGoogleAuth();
-    loadMenu("KFC");
-    loadCart();
-  }
 </script>
 </body>
 </html>
