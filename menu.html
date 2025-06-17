@@ -339,25 +339,6 @@ function loadMenu(restaurant) {
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 
-  // Firebase auth state listener: redirect if not logged in
-firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-
-  if (!user) {
-    // Redirect to login page if not logged in
-    window.location.href = "login.html";
-    return;
-  }
-
-  // Firebase auth state listener: redirect if not logged in
-firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-
-  if (!user) {
-    // Redirect to login page if not logged in
-    window.location.href = "login.html";
-    return;
-  }
 
   // User is logged in - display profile
   const name = user.displayName || user.email.split('@')[0];
@@ -582,6 +563,39 @@ function showAddedToCartPopup() {
     popup.style.transition = "opacity 0.5s";
     popup.style.opacity = "0";
   }, 1500);
+}
+// Firebase auth state listener: redirect if not logged in
+firebase.auth().onAuthStateChanged(user => {
+  const profile = document.getElementById("user-profile");
+
+  if (!user) {
+    // Redirect to login page if not logged in
+    window.location.href = "login.html";
+    return;
+  }
+
+  // User is logged in - display profile
+  const name = user.displayName || user.email.split('@')[0];
+  const email = user.email;
+  const date = new Date(user.metadata.creationTime).toLocaleDateString();
+  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+  profile.innerHTML = `
+    <img src="${avatar}" alt="avatar" />
+    <p><strong>${name}</strong></p>
+    <p>${email}</p>
+    <p>Joined: ${date}</p>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  `;
+});
+
+// Logout function
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  }).catch(error => {
+    alert("Logout failed: " + error.message);
+  });
 }
 
 function payOnArrival() {
