@@ -8,10 +8,10 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
+  
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+  
   <style>
     /* Style Pay Upon Arrival button */
     #checkout-form button[type="button"] {
@@ -158,6 +158,19 @@
     #checkout-modal .close-btn:hover {
       color: red;
     }
+    #checkout-modal .error-message {
+      color: red;
+      font-weight: bold;
+      margin-top: 8px;
+      display: none;
+    }
+    #checkout-modal .success-message {
+      color: green;
+      font-weight: bold;
+      margin-top: 8px;
+      text-align: center;
+    }
+
     #checkout-btn {
       background-color: red;
       color: white;
@@ -175,7 +188,6 @@
     }
   </style>
 </head>
-
 <body onload="initGoogleAuth(); loadMenu('KFC'); loadCart();">
 
   <div class="menu-icon" onclick="toggleMenu()">☰</div>
@@ -197,22 +209,22 @@
 
   <div class="top-bar"><h1>KRAVIN'</h1></div>
 
-  <div class="dropdown" id="menu-dropdown">
-    <div class="user-info" id="user-profile">Loading profile...</div>
+<div class="dropdown" id="menu-dropdown">
+  <div class="user-info" id="user-profile">Loading profile...</div>
 
-    <div class="dropdown-title">RESTAURANTS</div>
+  <div class="dropdown-title">RESTAURANTS</div>
 
-    <a href="#" onclick="loadMenu('KFC')">KFC</a>
-    <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
-    <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
-    <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
-    <a href="#" onclick="loadMenu('Tasty')">Tasty</a>
+  <a href="#" onclick="loadMenu('KFC')">KFC</a>
+  <a href="#" onclick="loadMenu('LasVagas')">Las Vagas</a>
+  <a href="#" onclick="loadMenu('Cloggys')">Cloggys</a>
+  <a href="#" onclick="loadMenu('Waterloo')">Waterloo Guesthouse</a>
+  <a href="#" onclick="loadMenu('Tasty')">Tasty</a>
 
-    <div style="margin-top: 15px; padding: 10px; border-top: 1px solid #ccc; font-size: 14px; color: #333;">
-      <p><span style="font-weight: 700; text-transform: uppercase;">Opening Hours:</span><br>MON-SAT 10:00 AM - 09:00 PM<br>SUNDAY 11:00 AM - 09:00 PM</p>
-      <p style="margin-top: 20px;"><span style="font-weight: 700; text-transform: uppercase;">Estimated Delivery Time:</span><br>15-30 Min</p>
-    </div>
+  <div style="margin-top: 15px; padding: 10px; border-top: 1px solid #ccc; font-size: 14px; color: #333;">
+    <p><span style="font-weight: 700; text-transform: uppercase;">Opening Hours:</span><br>MON-SAT 10:00 AM - 09:00 PM<br>SUNDAY 11:00 AM - 09:00 PM</p>
+    <p style="margin-top: 20px;"><span style="font-weight: 700; text-transform: uppercase;">Estimated Delivery Time:</span><br>15-30 Min</p>
   </div>
+</div>
 
   <div id="product-list">Loading menu...</div>
 
@@ -236,360 +248,384 @@
         <p id="total-price">Total: JMD $0.00</p>
 
         <button type="button" onclick="payOnArrival()">PAY UPON ARRIVAL</button>
+
+        <p id="form-error" style="color:red; display:none;"></p>
+        <p id="payment-success" style="color:green; display:none;">Order received! Thank you.</p>
       </form>
     </div>
   </div>
 
-  <script>
+<script>
+  const phoneInput = document.getElementById("phone");
+  const errorMessage = document.getElementById("error-message");
 
-        const phoneInput = document.getElementById("phone");
-    const errorMessage = document.getElementById("error-message");
+  phoneInput.addEventListener("input", () => {
+    let digits = phoneInput.value.replace(/\D/g, "").substring(0, 10);
+    let formatted = "";
 
-    phoneInput.addEventListener("input", () => {
-      let digits = phoneInput.value.replace(/\D/g, "").substring(0, 10);
-      let formatted = "";
+    if (digits.length > 0) formatted += "(" + digits.substring(0, 3);
+    if (digits.length >= 4) formatted += ") " + digits.substring(3, 6);
+    if (digits.length >= 7) formatted += "-" + digits.substring(6, 10);
 
-      if (digits.length > 0) formatted += "(" + digits.substring(0, 3);
-      if (digits.length >= 4) formatted += ") " + digits.substring(3, 6);
-      if (digits.length >= 7) formatted += "-" + digits.substring(6, 10);
+    phoneInput.value = formatted;
+  });
 
-      phoneInput.value = formatted;
-    });
+  document.getElementById("checkout-form").addEventListener("submit", function (e) {
+    const digitsOnly = phoneInput.value.replace(/\D/g, "");
+    if (digitsOnly.length !== 10) {
+      e.preventDefault();
+      errorMessage.textContent = "Phone number must be exactly 10 digits.";
+    } else {
+      errorMessage.textContent = "";
+    }
+  });
 
-    document.getElementById("checkout-form").addEventListener("submit", function (e) {
-      const digitsOnly = phoneInput.value.replace(/\D/g, "");
-      if (digitsOnly.length !== 10) {
-        e.preventDefault();
-        errorMessage.textContent = "Phone number must be exactly 10 digits.";
-      } else {
-        errorMessage.textContent = "";
-      }
-    });
+  let currentRestaurant = "KFC";
+  let cart = [];
 
-    let currentRestaurant = "KFC";
-    let cart = [];
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+    authDomain: "kravin-delivery-login.firebaseapp.com",
+    projectId: "kravin-delivery-login",
+    storageBucket: "kravin-delivery-login.appspot.com",
+    messagingSenderId: "1035748923136",
+    appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-      authDomain: "kravin-delivery-login.firebaseapp.com",
-      projectId: "kravin-delivery-login",
-      storageBucket: "kravin-delivery-login.appspot.com",
-      messagingSenderId: "1035748923136",
-      appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
-    };
+  firebase.initializeApp(firebaseConfig);
 
-    firebase.initializeApp(firebaseConfig);
+  const sheets = {
+    KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
+    LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
+    Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
+    Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
+    Tasty: "16apFsQAAYRIf2EzdiW8M1KX8S4NoZwFoCwRlV1fH7_0"
+  };
 
-    const sheets = {
-      KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
-      LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
-      Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
-      Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
-      Tasty: "16apFsQAAYRIf2EzdiW8M1KX8S4NoZwFoCwRlV1fH7_0"
-    };
-    const sheetName = "Sheet1";
+  const sheetName = "Sheet1";
 
-    let tokenClient;
-    let accessToken = null;
+  let tokenClient;
+  let accessToken = null;
 
-    function initGoogleAuth() {
-      gapi.load('client', async () => {
-        try {
-          await gapi.client.init({
-            apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-          });
+  function initGoogleAuth() {
+    gapi.load('client', async () => {
+      try {
+        await gapi.client.init({
+          apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+        });
 
-          tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-            scope: 'https://www.googleapis.com/auth/drive.file',
-            callback: (resp) => {
-              if (resp.error) {
-                console.error('Token error', resp);
-                return;
-              }
-              accessToken = resp.access_token;
-              console.log('Access token acquired:', accessToken);
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (resp) => {
+            if (resp.error) {
+              console.error('Token error', resp);
+              return;
             }
-          });
+            accessToken = resp.access_token;
+            console.log('Access token acquired:', accessToken);
+          }
+        });
 
-          tokenClient.requestAccessToken({ prompt: '' });
+        tokenClient.requestAccessToken({ prompt: '' });
 
-        } catch (error) {
-          console.error('Google API init error:', error);
-        }
-      });
-    }
-
-    function calculateDeliveryFee() {
-      const address = document.getElementById("address").value.trim().toLowerCase();
-
-      if (address.includes("brompton")) return 1500;
-      if (address.includes("black river")) return 1000;
-      if (address.includes("speculation")) return 1000;
-      if (address.includes("luana")) return 1000;
-      if (address.includes("crawford")) return 1000;
-      if (address.includes("shrewsbury")) return 1000;
-      if (address.includes("cambridge")) return 1000;
-      if (address.includes("fyffes pen")) return 1000;
-      if (address.includes("oxford")) return 1000;
-      if (address.includes("lewis town")) return 1000;
-      if (address.includes("sandy ground")) return 1800;
-      if (address.includes("hodges")) return 1000;
-
-      return 0;
-    }
-
-    function calculateCartTotal() {
-      let total = 0;
-      cart.forEach(item => {
-        const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ""));
-        if (!isNaN(priceNum)) {
-          total += priceNum * item.quantity;
-        }
-      });
-      return total;
-    }
-
-    function updateFeesAndTotal() {
-      const deliveryFee = calculateDeliveryFee();
-      const cartTotal = calculateCartTotal();
-      const grandTotal = cartTotal + deliveryFee;
-
-      document.getElementById("delivery-fee").textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
-      document.getElementById("total-price").textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
-    }
-
-    document.getElementById("address").addEventListener("input", updateFeesAndTotal);
-
-    function addToCart(name, price, image) {
-      if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-        alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
-        return;
+      } catch (error) {
+        console.error('Google API init error:', error);
       }
+    });
+  }
 
-      const existing = cart.find(i => i.name === name);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+  function calculateDeliveryFee() {
+    const address = document.getElementById("address").value.trim().toLowerCase();
+
+    if (address.includes("brompton")) return 1500;
+    if (address.includes("black river")) return 1000;
+    if (address.includes("speculation")) return 1000;
+    if (address.includes("luana")) return 1000;
+    if (address.includes("crawford")) return 1000;
+    if (address.includes("shrewsbury")) return 1000;
+    if (address.includes("cambridge")) return 1000;
+    if (address.includes("fyffes pen")) return 1000;
+    if (address.includes("oxford")) return 1000;
+    if (address.includes("lewis town")) return 1000;
+    if (address.includes("sandy ground")) return 1800;
+    if (address.includes("hodges")) return 1000;
+
+    return 0;
+  }
+
+  function calculateCartTotal() {
+    let total = 0;
+    cart.forEach(item => {
+      const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ""));
+      if (!isNaN(priceNum)) {
+        total += priceNum * item.quantity;
       }
+    });
+    return total;
+  }
 
+  function updateFeesAndTotal() {
+    const deliveryFee = calculateDeliveryFee();
+    const cartTotal = calculateCartTotal();
+    const grandTotal = cartTotal + deliveryFee;
+
+    document.getElementById("delivery-fee").textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
+    document.getElementById("total-price").textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
+  }
+
+  document.getElementById("address").addEventListener("input", updateFeesAndTotal);
+
+  function addToCart(name, price, image) {
+    if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+      alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
+      return;
+    }
+
+    const existing = cart.find(i => i.name === name);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+    }
+
+    updateCartUI();
+    saveCart();
+    updateFeesAndTotal();
+    showAddedToCartPopup();
+    document.getElementById("cart-dropdown").style.display = "block";
+  }
+
+  function removeFromCart(name) {
+    const index = cart.findIndex(i => i.name === name);
+    if (index > -1) {
+      cart.splice(index, 1);
       updateCartUI();
       saveCart();
       updateFeesAndTotal();
-      showAddedToCartPopup();
-      document.getElementById("cart-dropdown").style.display = "block";
     }
+  }
 
-    function removeFromCart(name) {
-      const index = cart.findIndex(i => i.name === name);
-      if (index > -1) {
-        cart.splice(index, 1);
-        updateCartUI();
-        saveCart();
-        updateFeesAndTotal();
-      }
-    }
-
-    function increaseQuantity(name) {
-      const item = cart.find(i => i.name === name);
-      if (item) {
-        item.quantity += 1;
-        updateCartUI();
-        saveCart();
-        updateFeesAndTotal();
-      }
-    }
-
-    function decreaseQuantity(name) {
-      const item = cart.find(i => i.name === name);
-      if (item) {
-        if (item.quantity > 1) {
-          item.quantity -= 1;
-          updateCartUI();
-          saveCart();
-          updateFeesAndTotal();
-        } else {
-          removeFromCart(name);
-        }
-      }
-    }
-
-    function updateCartUI() {
-      const countElem = document.getElementById("cart-count");
-      const cartItemsElem = document.getElementById("cart-items");
-      const checkoutBtn = document.getElementById("checkout-btn");
-
-      const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-      if (totalQuantity > 0) {
-        countElem.style.display = "inline-block";
-        countElem.textContent = totalQuantity;
-        checkoutBtn.style.display = "block";
-      } else {
-        countElem.style.display = "none";
-        checkoutBtn.style.display = "none";
-      }
-
-      if (cart.length === 0) {
-        cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-        return;
-      }
-
-      cartItemsElem.innerHTML = "";
-      cart.forEach(item => {
-        const itemDiv = document.createElement("div");
-        itemDiv.innerHTML = `
-          <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
-          <div style="flex-grow:1;">
-            <strong>${item.name}</strong><br/>
-            ${item.price} x ${item.quantity}
-          </div>
-          <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
-          <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
-          <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
-        `;
-        cartItemsElem.appendChild(itemDiv);
-      });
-    }
-
-    function toggleCart() {
-      const dropdown = document.getElementById("cart-dropdown");
-      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    }
-
-    document.addEventListener('click', function (event) {
-      const cartDropdown = document.getElementById('cart-dropdown');
-      const cartIcon = document.querySelector('.cart-icon');
-      if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-        cartDropdown.style.display = 'none';
-      }
-    });
-
-    function saveCart() {
-      localStorage.setItem('kravinCart', JSON.stringify(cart));
-    }
-
-    function loadCart() {
-      const savedCart = localStorage.getItem('kravinCart');
-      if (savedCart) {
-        cart = JSON.parse(savedCart);
-        updateCartUI();
-        updateFeesAndTotal();
-      }
-    }
-
-    function loadMenu(restaurant) {
-      currentRestaurant = restaurant;
-      const sheetId = sheets[restaurant];
-      const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-      const container = document.getElementById("product-list");
-      container.innerHTML = "Loading menu...";
-
-      fetch(sheetUrl)
-        .then(res => res.json())
-        .then(data => {
-          container.innerHTML = "";
-          data.forEach(item => {
-            const product = document.createElement("div");
-            product.className = "product";
-            product.innerHTML = `
-              <img src="${item.Image}" alt="${item.Name}" />
-              <h3>${item.Name}</h3>
-              <p><strong>$${item.Price}</strong></p>
-              <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-            `;
-            container.appendChild(product);
-          });
-        })
-        .catch(() => {
-          container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-        });
-
-      document.getElementById("menu-dropdown").style.display = "none";
-    }
-
-    firebase.auth().onAuthStateChanged(user => {
-      const profile = document.getElementById("user-profile");
-
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      const name = user.displayName || user.email.split('@')[0];
-      const email = user.email;
-      const date = new Date(user.metadata.creationTime).toLocaleDateString();
-      const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
-
-      profile.innerHTML = `
-        <img src="${avatar}" alt="avatar" />
-        <p><strong>${name}</strong></p>
-        <p>${email}</p>
-        <p>Joined: ${date}</p>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-      `;
-    });
-
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "login.html";
-      }).catch(error => {
-        alert("Logout failed: " + error.message);
-      });
-    }
-
-    const checkoutModal = document.getElementById("checkout-modal");
-    const checkoutForm = document.getElementById("checkout-form");
-
-    function openCheckout() {
-      checkoutModal.style.display = "flex";
-    }
-
-    function closeCheckout() {
-      checkoutModal.style.display = "none";
-      checkoutForm.reset();
-    }
-
-    function toggleMenu() {
-      const dropdown = document.getElementById("menu-dropdown");
-      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-    }
-
-    function showAddedToCartPopup() {
-      let popup = document.getElementById("added-popup");
-      if (!popup) {
-        popup = document.createElement("div");
-        popup.id = "added-popup";
-        popup.textContent = "ADDED TO CART";
-        popup.style.position = "fixed";
-        popup.style.bottom = "20px";
-        popup.style.right = "20px";
-        popup.style.backgroundColor = "#28a745";
-        popup.style.color = "#fff";
-        popup.style.padding = "12px 20px";
-        popup.style.borderRadius = "8px";
-        popup.style.fontWeight = "bold";
-        popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-        popup.style.zIndex = "9999";
-        document.body.appendChild(popup);
-      }
-
-      popup.style.opacity = "1";
-
-      setTimeout(() => {
-        popup.style.transition = "opacity 0.5s";
-        popup.style.opacity = "0";
-      }, 1500);
-    }
-
-    function payOnArrival() {
-      alert("Thank you for your order. Payment upon arrival selected.");
-      cart = [];
-      saveCart();
+  function increaseQuantity(name) {
+    const item = cart.find(i => i.name === name);
+    if (item) {
+      item.quantity += 1;
       updateCartUI();
-      closeCheckout();
+      saveCart();
+      updateFeesAndTotal();
     }
-  </script>
+  }
+
+  function decreaseQuantity(name) {
+    const item = cart.find(i => i.name === name);
+    if (item) {
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        updateCartUI();
+        saveCart();
+        updateFeesAndTotal();
+      } else {
+        removeFromCart(name);
+      }
+    }
+  }
+
+  function updateCartUI() {
+    const countElem = document.getElementById("cart-count");
+    const cartItemsElem = document.getElementById("cart-items");
+    const checkoutBtn = document.getElementById("checkout-btn");
+
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    if (totalQuantity > 0) {
+      countElem.style.display = "inline-block";
+      countElem.textContent = totalQuantity;
+      checkoutBtn.style.display = "block";
+    } else {
+      countElem.style.display = "none";
+      checkoutBtn.style.display = "none";
+    }
+
+    if (cart.length === 0) {
+      cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
+
+    cartItemsElem.innerHTML = "";
+    cart.forEach(item => {
+      const itemDiv = document.createElement("div");
+      itemDiv.innerHTML = `
+        <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+        <div style="flex-grow:1;">
+          <strong>${item.name}</strong><br/>
+          ${item.price} x ${item.quantity}
+        </div>
+        <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
+        <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
+        <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+      `;
+      cartItemsElem.appendChild(itemDiv);
+    });
+  }
+
+  function toggleCart() {
+    const dropdown = document.getElementById("cart-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  document.addEventListener('click', function (event) {
+    const cartDropdown = document.getElementById('cart-dropdown');
+    const cartIcon = document.querySelector('.cart-icon');
+    if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+      cartDropdown.style.display = 'none';
+    }
+  });
+
+  function saveCart() {
+    localStorage.setItem('kravinCart', JSON.stringify(cart));
+  }
+
+  function loadCart() {
+    const savedCart = localStorage.getItem('kravinCart');
+    if (savedCart) {
+      cart = JSON.parse(savedCart);
+      updateCartUI();
+      updateFeesAndTotal();
+    }
+  }
+
+  function loadMenu(restaurant) {
+    currentRestaurant = restaurant;
+    const sheetId = sheets[restaurant];
+    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+    const container = document.getElementById("product-list");
+    container.innerHTML = "Loading menu...";
+
+    fetch(sheetUrl)
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = "";
+        data.forEach(item => {
+          const product = document.createElement("div");
+          product.className = "product";
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}" />
+            <h3>${item.Name}</h3>
+            <p><strong>$${item.Price}</strong></p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+          `;
+          container.appendChild(product);
+        });
+      })
+      .catch(() => {
+        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+      });
+
+    document.getElementById("menu-dropdown").style.display = "none";
+  }
+
+  firebase.auth().onAuthStateChanged(user => {
+    const profile = document.getElementById("user-profile");
+
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const name = user.displayName || user.email.split('@')[0];
+    const email = user.email;
+    const date = new Date(user.metadata.creationTime).toLocaleDateString();
+    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+    profile.innerHTML = `
+      <img src="${avatar}" alt="avatar" />
+      <p><strong>${name}</strong></p>
+      <p>${email}</p>
+      <p>Joined: ${date}</p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    `;
+  });
+
+  function logout() {
+    firebase.auth().signOut().then(() => {
+      window.location.href = "login.html";
+    }).catch(error => {
+      alert("Logout failed: " + error.message);
+    });
+  }
+
+  const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutForm = document.getElementById("checkout-form");
+  const formError = document.getElementById("form-error");
+  const paymentSuccess = document.getElementById("payment-success");
+
+  function openCheckout() {
+    formError.style.display = "none";
+    paymentSuccess.style.display = "none";
+    checkoutForm.style.display = "block";
+    checkoutModal.style.display = "flex";
+  }
+
+  function closeCheckout() {
+    checkoutModal.style.display = "none";
+    checkoutForm.reset();
+  }
+
+  function payOnArrival() {
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
+
+    if (name === "" || phone === "" || address === "") {
+      formError.textContent = "Please fill out all fields.";
+      formError.style.display = "block";
+      return;
+    }
+
+    formError.style.display = "none";
+    paymentSuccess.style.display = "block";
+
+    cart = [];
+    saveCart();
+    updateCartUI();
+    updateFeesAndTotal();
+
+    setTimeout(() => {
+      closeCheckout();
+    }, 2000);
+  }
+
+  function toggleMenu() {
+    const dropdown = document.getElementById("menu-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  function showAddedToCartPopup() {
+    let popup = document.getElementById("added-popup");
+    if (!popup) {
+      popup = document.createElement("div");
+      popup.id = "added-popup";
+      popup.textContent = "ADDED TO CART";
+      popup.style.position = "fixed";
+      popup.style.bottom = "20px";
+      popup.style.right = "20px";
+      popup.style.backgroundColor = "#28a745";
+      popup.style.color = "#fff";
+      popup.style.padding = "12px 20px";
+      popup.style.borderRadius = "8px";
+      popup.style.fontWeight = "bold";
+      popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+      popup.style.zIndex = "9999";
+      document.body.appendChild(popup);
+    }
+
+    popup.style.opacity = "1";
+
+    setTimeout(() => {
+      popup.style.transition = "opacity 0.5s";
+      popup.style.opacity = "0";
+    }, 1500);
+  }
+</script>
 </body>
 </html>
