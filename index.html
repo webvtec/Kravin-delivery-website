@@ -294,11 +294,6 @@ function loadMenu(restaurant) {
   currentRestaurant = restaurant;
 
   const sheetId = sheets[restaurant];
-  if (!sheetId) {
-    document.getElementById('product-list').innerHTML = 'Menu not available.';
-    return;
-  }
-
   const url = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
 
   fetch(url)
@@ -307,26 +302,56 @@ function loadMenu(restaurant) {
       const productList = document.getElementById('product-list');
       productList.innerHTML = '';
 
+      // Group by categories
+      const grouped = {};
       data.forEach(item => {
-        const productDiv = document.createElement('div');
-        productDiv.className = 'product';
-        productDiv.innerHTML = `
-          <img src="${item.Image}" alt="${item.Name}">
-          <h3>${item.Name}</h3>
-          <p>${item.Price}</p>
-          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
-        `;
-        productList.appendChild(productDiv);
+        if (!grouped[item.Category]) {
+          grouped[item.Category] = [];
+        }
+        grouped[item.Category].push(item);
       });
+
+      // Display categories and products
+      for (const category in grouped) {
+        const section = document.createElement('div');
+        section.className = 'category-section';
+
+        const header = document.createElement('h2');
+        header.textContent = category.toUpperCase();
+        header.style.textAlign = 'center';
+        header.style.margin = '20px 0';
+        section.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
+        grid.style.gap = '16px';
+        grid.style.padding = '10px';
+
+        grouped[category].forEach(item => {
+          const product = document.createElement('div');
+          product.className = 'product';
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}">
+            <h3>${item.Name}</h3>
+            <p>${item.Price}</p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
+          `;
+          grid.appendChild(product);
+        });
+
+        section.appendChild(grid);
+        productList.appendChild(section);
+      }
     })
     .catch(error => {
       console.error('Error loading menu:', error);
-      document.getElementById('product-list').innerHTML = 'MENU NOT YET AVAILABLE';
+      document.getElementById('product-list').innerHTML = 'Failed to load menu.';
     });
 
   document.getElementById("menu-dropdown").style.display = "none";
 }
-
+  
   const firebaseConfig = {
     apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
     authDomain: "kravin-delivery-login.firebaseapp.com",
