@@ -831,61 +831,71 @@ const doc = new jsPDF();
 }
 
   async function uploadToDrive(blob, filename) {
-  alert("📤 Uploading to Google Drive...");
+  alert("📤 Uploading to Google Drive...");
+  try {
+    const authInstance = gapi.auth2.getAuthInstance();
+    console.log("Auth instance:", authInstance);
+    if (!authInstance) throw new Error("Google Auth instance missing");
 
-  const accessToken = gapi.auth.getToken()?.access_token;
-  if (!accessToken) {
-    alert("❌ No access token. Please make sure you're signed in.");
-    throw new Error("No access token");
-  }
+    const user = authInstance.currentUser.get();
+    console.log("Current user:", user);
+    if (!user) throw new Error("No current user");
 
-  const metadata = {
-    name: filename,
-    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // your folder ID
-    mimeType: 'application/pdf',
-  };
+    const accessToken = user.getAuthResponse().access_token;
+    console.log("Access token:", accessToken);
+    if (!accessToken) throw new Error("No access token");
 
-  const form = new FormData();
-  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  form.append("file", blob);
+    const metadata = {
+      name: filename,
+      parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'],
+      mimeType: 'application/pdf',
+    };
 
-  try {
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: new Headers({ Authorization: "Bearer " + accessToken }),
-      body: form,
-    });
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", blob);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      alert("❌ Upload failed: " + errorText);
-      throw new Error(errorText);
-    }
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: new Headers({ Authorization: "Bearer " + accessToken }),
+      body: form,
+    });
 
-    const file = await res.json();
-    alert("✅ File uploaded! Now making it public...");
+    console.log("Upload response status:", res.status);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Upload failed:", errorText);
+      throw new Error(errorText);
+    }
 
-    // Set permissions to public
-    await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        role: "reader",
-        type: "anyone",
-      }),
-    });
+    const file = await res.json();
+    console.log("Uploaded file metadata:", file);
 
-    const link = `https://drive.google.com/file/d/${file.id}/view`;
-    alert("✅ Public link ready: " + link);
-    return link;
+    const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role: "reader", type: "anyone" }),
+    });
 
-  } catch (err) {
-    alert("❌ Upload or permission failed: " + err.message);
-    throw err;
-  }
+    console.log("Permission response status:", permRes.status);
+    if (!permRes.ok) {
+      const permError = await permRes.text();
+      console.error("Permission setting failed:", permError);
+      throw new Error(permError);
+    }
+
+    const link = `https://drive.google.com/file/d/${file.id}/view`;
+    alert("✅ Public link ready: " + link);
+    return link;
+
+  } catch (err) {
+    alert("❌ Upload or permission failed: " + err.message);
+    console.error(err);
+    throw err;
+  }
 }
 
 // Toggle menu dropdown
