@@ -339,22 +339,6 @@ function loadMenu(restaurant) {
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 
-
-  // User is logged in - display profile
-  const name = user.displayName || user.email.split('@')[0];
-  const email = user.email;
-  const date = new Date(user.metadata.creationTime).toLocaleDateString();
-  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
-
-  profile.innerHTML = `
-    <img src="${avatar}" alt="avatar" />
-    <p><strong>${name}</strong></p>
-    <p>${email}</p>
-    <p>Joined: ${date}</p>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  `;
-});
-
   function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "login.html";
