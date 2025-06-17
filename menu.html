@@ -8,6 +8,8 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
 
   <style>
     /* Style Pay Upon Arrival button */
@@ -287,6 +289,8 @@
   </div>
 </div>
 
+  <body onload="initGoogleAuth()">
+  
 <!-- JavaScript -->
 <script>
   const phoneInput = document.getElementById("phone");
@@ -345,6 +349,52 @@
 
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
+
+  function initGoogleAuth() {
+  gapi.load("client:auth2", async () => {
+    await gapi.client.init({
+      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
+      clientId: "YOUR_CLIENT_ID.apps.googleusercontent.com",
+      scope: "https://www.googleapis.com/auth/drive.file"
+    });
+    gapi.auth2.getAuthInstance().signIn(); // This will auto-auth on load
+  });
+}
+
+  async function uploadToDrive(fileBlob, fileName) {
+  const folderId = "12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0";
+
+  const metadata = {
+    name: fileName + ".pdf",
+    parents: [folderId],
+    mimeType: "application/pdf"
+  };
+
+  const accessToken = gapi.auth.getToken().access_token;
+
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", fileBlob);
+
+  const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: new Headers({ Authorization: "Bearer " + accessToken }),
+    body: form
+  });
+
+  const file = await response.json();
+
+  await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ role: "reader", type: "anyone" })
+  });
+
+  return `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
+}
 
 // Calculate delivery fee based on address input
 function calculateDeliveryFee() {
@@ -656,51 +706,49 @@ function calculateTotal() {
 const whatsappNumber = "18763422293";
 
 // Pay on Arrival function sends order details via WhatsApp
-function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
-  }
-
-  formError.style.display = "none";
-
+async function payOnArrival() {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  if (cart.length === 0) {
-    formError.textContent = "Your cart is empty!";
-    formError.style.display = "block";
+  if (!name || !phone || !address) {
+    document.getElementById("form-error").textContent = "Please fill out all fields.";
+    document.getElementById("form-error").style.display = "block";
     return;
   }
 
-  let orderText = "";
+  document.getElementById("form-error").style.display = "none";
+  document.getElementById("payment-success").style.display = "block";
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 10;
+  doc.text(`Order for: ${name}`, 10, y); y += 10;
+  doc.text(`Phone: ${phone}`, 10, y); y += 10;
+  doc.text(`Address: ${address}`, 10, y); y += 10;
+  doc.text("Items:", 10, y); y += 10;
+
+  let total = 0;
   cart.forEach(item => {
-    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
+    const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ""));
+    const itemTotal = priceNum * item.quantity;
+    total += itemTotal;
+    doc.text(`${item.name} x${item.quantity} - $${itemTotal.toFixed(2)}`, 10, y);
+    y += 10;
   });
 
   const deliveryFee = calculateDeliveryFee();
-  const total = calculateTotal();
+  const grandTotal = total + deliveryFee;
 
-  const message = 
-`NEW KRAVIN DELIVERY ORDER - PAY ON ARRIVAL
+  doc.text(`Delivery Fee: $${deliveryFee.toFixed(2)}`, 10, y); y += 10;
+  doc.text(`Total: $${grandTotal.toFixed(2)}`, 10, y); y += 10;
 
-Restaurant: ${currentRestaurant}
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
+  const pdfBlob = doc.output("blob");
+  const link = await uploadToDrive(pdfBlob, name);
 
-ORDER DETAILS:
-${orderText}
-DELIVERY FEE: JMD $${deliveryFee.toFixed(2)}
-GRAND TOTAL: JMD $${total}
-
-Thank you!`;
-
-  const encodedMessage = encodeURIComponent(message);
-
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
+  const whatsappMsg = `Hi, I just placed an order! Here's my order PDF: ${link}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
+}
 
   paymentSuccess.style.display = "block";
   checkoutForm.style.display = "none";
