@@ -360,7 +360,7 @@ function loadMenu(restaurant) {
     })
     .catch(error => {
       console.error('Error loading menu:', error);
-      document.getElementById('product-list').innerHTML = 'Failed to load menu.';
+      document.getElementById('product-list').innerHTML = 'NOT YET AVAILABLE';
     });
 
   document.getElementById("menu-dropdown").style.display = "none";
