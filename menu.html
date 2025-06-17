@@ -316,27 +316,6 @@
   });
 }
 
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-          scope: 'https://www.googleapis.com/auth/drive.file',
-          callback: (resp) => {
-            if (resp.error) {
-              console.error('Token error', resp);
-              return;
-            }
-            accessToken = resp.access_token;
-            console.log('Access token acquired:', accessToken);
-          }
-        });
-
-        tokenClient.requestAccessToken({ prompt: '' });
-
-      } catch (error) {
-        console.error('Google API init error:', error);
-      }
-    });
-  }
-
   function calculateDeliveryFee() {
     const address = document.getElementById("address").value.trim().toLowerCase();
 
