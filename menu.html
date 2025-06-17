@@ -843,13 +843,14 @@ async function payOnArrival() {
     gapi.load('client:auth2', async () => {
       try {
         await gapi.client.init({
-          clientId: 'YOUR_CLIENT_ID_HERE',
+          clientId: 'YOUR_CLIENT_ID_HERE',  // Replace with your real client ID
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
           scope: 'https://www.googleapis.com/auth/drive.file'
         });
         const authInstance = gapi.auth2.getAuthInstance();
         if (!authInstance.isSignedIn.get()) {
-          await authInstance.signIn({ prompt: 'none' });
+          // Use prompt 'select_account' instead of 'none' so user can pick account if needed
+          await authInstance.signIn({ prompt: 'select_account' });
         }
         resolve();
       } catch (err) {
