@@ -764,31 +764,49 @@ window.onload = async () => {
   }
 };
 
-  async function initGoogleApi() {
+let tokenClient;
+let accessToken = null;
+
+async function initGoogleApi() {
   return new Promise((resolve, reject) => {
     if (!window.gapi) {
       alert("❌ gapi not loaded");
       return reject(new Error("gapi not loaded"));
     }
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      alert("❌ Google Identity Services (GIS) library not loaded");
+      return reject(new Error("GIS library not loaded"));
+    }
 
-    gapi.load('client:auth2', async () => {
+    gapi.load('client', async () => {
       try {
-        console.log("Initializing Google API...");
+        console.log("Initializing Google API client...");
         await gapi.client.init({
-          clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-          scope: 'https://www.googleapis.com/auth/drive.file'
+        });
+        console.log("Google API client initialized");
+
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (tokenResponse) => {
+            if (tokenResponse.error) {
+              console.error('Token client error:', tokenResponse.error);
+              reject(tokenResponse);
+            } else {
+              accessToken = tokenResponse.access_token;
+              console.log("Access token received:", accessToken);
+              resolve();
+            }
+          },
         });
 
-        const authInstance = gapi.auth2.getAuthInstance();
-        if (!authInstance.isSignedIn.get()) {
-          await authInstance.signIn({ prompt: 'none' });
-        }
-        console.log("Google API initialized");
-        resolve();
+        // Request access token silently without prompt
+        tokenClient.requestAccessToken({ prompt: '' });
+
       } catch (err) {
-        console.error("Google API init error:", err);
-        alert("❌ Google API init failed: " + (err?.message || JSON.stringify(err)));
+        console.error("Google API client init error:", err);
+        alert("❌ Google API client init failed: " + (err?.message || JSON.stringify(err)));
         reject(err);
       }
     });
@@ -863,16 +881,17 @@ async function payOnArrival() {
   doc.text(`Delivery Fee: $${deliveryFee.toFixed(2)}`, 10, y); y += 10;
   doc.text(`Total: $${grandTotal.toFixed(2)}`, 10, y); y += 10;
 
-  // Convert PDF to Blob for upload
   const pdfBlob = doc.output("blob");
-  
+
   // 🔐 Ensure we have an access token before uploading
   if (!accessToken) {
-    await new Promise((resolve) => {
+    await new Promise((resolve, reject) => {
       tokenClient.callback = (resp) => {
         if (resp.error) {
           alert("❌ Authorization failed");
-          throw resp;
+          console.error("Auth error:", resp);
+          reject(resp);
+          return;
         }
         accessToken = resp.access_token;
         console.log("✅ Token received:", accessToken);
@@ -905,27 +924,11 @@ async function payOnArrival() {
     console.error("Upload to Drive error:", error);
   }
 }
-
-  async function uploadToDrive(blob, filename, accessToken) {
+  
+async function uploadToDrive(blob, filename, accessToken) {
   alert("📤 Uploading to Google Drive...");
   try {
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-  method: "POST",
-  headers: new Headers({ Authorization: "Bearer " + accessToken }),
-  body: form,
-});
-
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-  method: "POST",
-  headers: new Headers({ Authorization: "Bearer " + accessToken }),
-  body: form,
-});
-
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-  method: "POST",
-  headers: new Headers({ Authorization: "Bearer " + accessToken }),
-  body: form,
-});
+    if (!accessToken) throw new Error("No access token");
 
     const metadata = {
       name: filename,
