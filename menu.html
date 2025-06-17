@@ -531,7 +531,7 @@ async function payOnArrival() {
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
 
-  if (name === "" || phone === "" || address === "") {
+  if (!name || !phone || !address) {
     const fe = document.getElementById("form-error");
     fe.textContent = "Please fill out all fields.";
     fe.style.display = "block";
@@ -546,32 +546,36 @@ async function payOnArrival() {
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
   const formData = new FormData();
-  formData.append("file", new Blob([orderDetails], { type: "text/plain" }), `Order_${name}_${Date.now()}.txt`);
+  formData.append("file", 
+    new Blob([orderDetails], { type: "text/plain" }), 
+    `Order_${name}_${Date.now()}.txt`
+  );
 
   try {
-    const resp = await fetch("https://file.io", {
-      method: "POST",
-      body: formData
-    });
+    const resp = await fetch("https://file.io/", { method: "POST", body: formData });
     const json = await resp.json();
 
     if (!json.success || !json.link) {
       alert("Upload failed. Please try again.");
+      console.error("file.io error:", json);
       return;
     }
 
     const link = json.link;
-    const whatsappNumber = "18763422293"; // Your WhatsApp number
+    const whatsappNumber = "18763422293"; // ✅ Replace with your WhatsApp number
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order:%20${encodeURIComponent(link)}`;
     window.open(whatsappUrl, "_blank");
 
     document.getElementById("payment-success").style.display = "block";
-    cart = []; saveCart(); updateCartUI(); updateFeesAndTotal();
+    cart = [];
+    saveCart();
+    updateCartUI();
+    updateFeesAndTotal();
 
     setTimeout(closeCheckout, 2000);
   } catch (err) {
-    alert("Upload error. Try again later.");
-    console.error(err);
+    alert("Upload error. Please try again later.");
+    console.error("Upload exception:", err);
   }
 }
 </script>
