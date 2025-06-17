@@ -561,51 +561,54 @@
 
   formError.style.display = "none";
 
-  // Prepare order details
+  // Build the order details
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
   cart.forEach(item => {
     orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  // Convert to Blob
-  const blob = new Blob([orderDetails], { type: 'text/plain' });
+  // Convert to Blob (text file for simplicity)
+  const fileBlob = new Blob([orderDetails], { type: 'text/plain' });
+  const file = new File([fileBlob], `Order_${name}_${Date.now()}.txt`);
+
+  // Prepare FormData
   const formData = new FormData();
-  formData.append('file', blob, `Order_${name}_${Date.now()}.txt`);
+  formData.append('file', file);
 
   try {
-    // Upload to File.io
-    const uploadResponse = await fetch('https://file.io', {
+    // Upload to GoFile.io
+    const uploadResponse = await fetch('https://api.gofile.io/uploadFile', {
       method: 'POST',
       body: formData
     });
+    const uploadResult = await uploadResponse.json();
 
-    const result = await uploadResponse.json();
-
-    if (result.success && result.link) {
-      const fileLink = result.link;
-
-      // Open WhatsApp with the file link
-      const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(fileLink)}`;
-      window.open(whatsappUrl, '_blank');
-
-      paymentSuccess.style.display = "block";
-
-      cart = [];
-      saveCart();
-      updateCartUI();
-      updateFeesAndTotal();
-
-      setTimeout(() => {
-        closeCheckout();
-      }, 2000);
-    } else {
-      alert('Failed to upload the order. Please try again.');
+    if (uploadResult.status !== "ok") {
+      alert('Upload failed. Please try again.');
+      return;
     }
 
-  } catch (err) {
-    console.error('Upload error', err);
-    alert('An error occurred while uploading the order.');
+    const downloadLink = uploadResult.data.downloadPage;
+
+    // Open WhatsApp with the prefilled message
+    const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(downloadLink)}`;
+    window.open(whatsappUrl, '_blank');
+
+    paymentSuccess.style.display = "block";
+
+    cart = [];
+    saveCart();
+    updateCartUI();
+    updateFeesAndTotal();
+
+    setTimeout(() => {
+      closeCheckout();
+    }, 2000);
+
+  } catch (error) {
+    alert('Something went wrong.');
+    console.error(error);
   }
 }
 
