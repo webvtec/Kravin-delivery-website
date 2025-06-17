@@ -749,7 +749,8 @@ async function payOnArrival() {
   }
   formError.style.display = "none";
 
-  const doc = new jsPDF();
+  const { jsPDF } = window.jspdf;
+const doc = new jsPDF();
   let y = 10;
   doc.text(`Order for: ${name}`, 10, y); y += 10;
   doc.text(`Phone: ${phone}`, 10, y); y += 10;
