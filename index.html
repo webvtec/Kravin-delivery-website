@@ -634,17 +634,17 @@ function payOnArrival() {
   }
   document.getElementById("form-error").style.display = "none";
 
-  let orderDetails = `NEW ORDER RECEIVED\n\nCustomer: ${name}\nPhone: ${phone}\nAddress: ${address}\nRestaurant: ${currentRestaurant}\n\nItems:\n`;
+  let orderDetails = `NEW KRAVIN DELIVERY ORDER - PAY UPON ARRIVAL\n\nRestaurant: ${currentRestaurant}\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nORDER DETAILS:\n`;
 
   cart.forEach(item => {
-    orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
+    orderDetails += `- ${item.name} x${item.quantity} (${item.price})\n`;
   });
 
   const deliveryFee = calculateDeliveryFee();
   const cartTotal = calculateCartTotal();
   const grandTotal = cartTotal + deliveryFee;
 
-  orderDetails += `\nDelivery Fee: JMD $${deliveryFee.toFixed(2)}\nGrand Total: JMD $${grandTotal.toFixed(2)}`;
+  orderDetails += `\nDELIVERY FEE: JMD $${deliveryFee.toFixed(2)}\nGRAND TOTAL: JMD $${grandTotal.toFixed(2)}`;
 
   const whatsappNumber = "18768899523"; // ✅ Your WhatsApp number
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderDetails)}`;
