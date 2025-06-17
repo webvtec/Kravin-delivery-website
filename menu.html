@@ -308,12 +308,13 @@
   let accessToken = null;
 
   function initGoogleAuth() {
-    gapi.load('client', async () => {
-      try {
-        await gapi.client.init({
-          apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
-          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-        });
+  // The new GAI flow doesn't need old gapi client initialization.
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: '', // We will pass the callback when requesting token
+  });
+}
 
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
@@ -582,78 +583,76 @@
     return;
   }
 
-  // Request Google token
-  tokenClient.requestAccessToken({
-    prompt: '',
-    callback: async (tokenResponse) => {
-      if (tokenResponse.error) {
-        console.error('Token error', tokenResponse);
-        return;
-      }
+  formError.style.display = "none";
 
-      accessToken = tokenResponse.access_token;
-
-      // Build order summary
-      let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
-      cart.forEach(item => {
-        orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
-      });
-      orderDetails += `\n${document.getElementById("total-price").textContent}`;
-
-      // Create PDF blob
-      const blob = new Blob([orderDetails], { type: 'application/pdf' });
-      const metadata = {
-        name: `Order_${name}_${Date.now()}.pdf`,
-        parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0']
-      };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', blob);
-
-      try {
-        // Upload PDF to Google Drive
-        const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
-          headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-          body: form
-        });
-
-        const file = await uploadResponse.json();
-
-        // Make PDF public
-        await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-          method: 'POST',
-          headers: new Headers({
-            'Authorization': 'Bearer ' + accessToken,
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({ role: 'reader', type: 'anyone' })
-        });
-
-        const fileLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
-
-        // Open WhatsApp to send link
-        const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(fileLink)}`;
-        window.open(whatsappUrl, '_blank');
-
-        formError.style.display = "none";
-        paymentSuccess.style.display = "block";
-
-        cart = [];
-        saveCart();
-        updateCartUI();
-        updateFeesAndTotal();
-
-        setTimeout(() => {
-          closeCheckout();
-        }, 2000);
-      } catch (error) {
-        console.error('Error uploading PDF or setting permission:', error);
-        alert('There was an issue processing your order. Please try again.');
-      }
+  // Request access token with the new GAI flow
+  tokenClient.callback = async (tokenResponse) => {
+    if (tokenResponse.error) {
+      alert('Google Auth Failed.');
+      console.error('Token error', tokenResponse);
+      return;
     }
-  });
+
+    accessToken = tokenResponse.access_token;
+
+    let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
+    cart.forEach(item => {
+      orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
+    });
+    orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
+
+    const blob = new Blob([orderDetails], { type: 'application/pdf' });
+    const metadata = {
+      name: `Order_${name}_${Date.now()}.pdf`,
+      parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0']
+    };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    try {
+      const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+        body: form
+      });
+
+      const file = await uploadResponse.json();
+
+      await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+        method: 'POST',
+        headers: new Headers({
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({ role: 'reader', type: 'anyone' })
+      });
+
+      const fileLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
+
+      const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(fileLink)}`;
+      window.open(whatsappUrl, '_blank');
+
+      paymentSuccess.style.display = "block";
+
+      cart = [];
+      saveCart();
+      updateCartUI();
+      updateFeesAndTotal();
+
+      setTimeout(() => {
+        closeCheckout();
+      }, 2000);
+
+    } catch (err) {
+      alert('Upload Failed.');
+      console.error('Upload error', err);
+    }
+  };
+
+  // Now request the token, which will trigger the callback above
+  tokenClient.requestAccessToken();
 }
 
   function toggleMenu() {
