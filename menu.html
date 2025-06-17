@@ -657,20 +657,31 @@ function calculateTotal() {
 // WhatsApp number for "Pay Upon Arrival" (without +)
 const whatsappNumber = "18763422293";
 
+let tokenClient;
+
 async function initGoogleApi() {
   return new Promise((resolve, reject) => {
-    gapi.load('client:auth2', async () => {
+    // Load the gapi client library for Drive API discovery
+    gapi.load('client', async () => {
       try {
         await gapi.client.init({
-          clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-          scope: 'https://www.googleapis.com/auth/drive.file'
         });
-        const authInstance = gapi.auth2.getAuthInstance();
-        if (!authInstance.isSignedIn.get()) {
-          await authInstance.signIn({prompt: 'none'});
-        }
-        resolve();
+        // Initialize the token client from Google Identity Services
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (resp) => {
+            if (resp.error) {
+              reject(resp);
+            } else {
+              accessToken = resp.access_token;
+              resolve();
+            }
+          },
+        });
+        // Request an access token silently, no prompt if possible
+        tokenClient.requestAccessToken({ prompt: '' });
       } catch (e) {
         reject(e);
       }
@@ -678,22 +689,13 @@ async function initGoogleApi() {
   });
 }
 
-const folderId = "12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0";
-
 async function uploadToDrive(blob, filename) {
   alert("📤 Uploading to Google Drive...");
 
   try {
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance) {
-      alert("❌ Google Auth instance missing");
-      throw new Error("Google Auth instance missing");
-    }
-
-    const user = authInstance.currentUser.get();
-    const accessToken = user.getAuthResponse().access_token;
+    // Use the global accessToken obtained via GIS
     if (!accessToken) {
-      alert("❌ No access token. Please make sure you're signed in.");
+      alert("❌ No access token. Please authorize first.");
       throw new Error("No access token");
     }
 
