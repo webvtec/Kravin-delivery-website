@@ -690,85 +690,66 @@ function calculateTotal() {
 const whatsappNumber = "18763422293";
 
 // Pay on Arrival function sends order details via WhatsApp
-async function payOnArrival() {
-  if (!checkoutForm.checkValidity()) {
-    formError.textContent = "Please fill out all required fields.";
-    formError.style.display = "block";
-    return;
-  }
-
-  formError.style.display = "none";
-
+ async function payOnArrival() {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
+  const digitsOnly = phone.replace(/\D/g, "");
 
-  if (cart.length === 0) {
-    formError.textContent = "Your cart is empty!";
-    formError.style.display = "block";
+  if (!name || digitsOnly.length !== 10 || !address) {
+    document.getElementById("form-error").textContent = "Please complete all fields correctly.";
+    document.getElementById("form-error").style.display = "block";
     return;
   }
 
-  // Calculate total from cart and delivery fee
-  const deliveryFee = 500; // Adjust based on your logic
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0) + deliveryFee;
+  const deliveryFee = calculateDeliveryFee();
+  const cartTotal = calculateCartTotal();
+  const total = deliveryFee + cartTotal;
 
-  const orderData = {
+  const order = {
     name,
     phone,
     address,
-    restaurant: currentRestaurant || "N/A",
+    restaurant: currentRestaurant,
     items: cart,
     deliveryFee,
-    totalPrice
+    total,
+    paymentMethod: "Pay on Arrival",
+    timestamp: new Date().toLocaleString()
   };
 
-  try {
-    await initGoogleDriveAPI(); // Ensure user is authenticated
-    const pdfBlob = await generateOrderPDF(orderData);
-    const fileName = `Order_${name}_${Date.now()}.pdf`;
-    const fileId = await uploadPDFToDrive(pdfBlob, fileName);
-    const fileLink = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
+  // 1. Generate PDF Blob
+  const pdfBlob = await generateOrderPDF(order);
 
-    // Open WhatsApp with view-only file link
-    const message = `Hello, my order is ready. Please see the order details here:\n${fileLink}`;
-    const whatsappURL = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappURL, "_blank");
-  } catch (error) {
-    console.error("Error processing order:", error);
-    alert("There was an issue processing your order. Please try again.");
-  }
-}
+  // 2. Show download link (since uploading to Drive client-only is complex)
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  const downloadLink = document.createElement("a");
+  downloadLink.href = pdfUrl;
+  downloadLink.download = `Order_${Date.now()}.pdf`;
+  downloadLink.textContent = "Download your order PDF";
+  document.body.appendChild(downloadLink);
 
-  const deliveryFee = calculateDeliveryFee();
-  const total = calculateTotal();
+  // 3. WhatsApp link with order summary (no PDF link without server)
+  const message = `
+Order from KRAVIN'
+Name: ${order.name}
+Phone: ${order.phone}
+Address: ${order.address}
+Restaurant: ${order.restaurant}
+Total: JMD ${order.total.toFixed(2)}
+(Delivery Fee included)
+Please confirm order.
+  `.trim();
 
-  const message = 
-`NEW KRAVIN DELIVERY ORDER - PAY ON ARRIVAL
+  // Open WhatsApp with message prefilled (manual send required)
+  openWhatsAppLink("YOUR_DELIVERY_NUMBER", message);
 
-Restaurant: ${currentRestaurant}
-Name: ${name}
-Phone: ${phone}
-Address: ${address}
+  document.getElementById("form-error").style.display = "none";
+  document.getElementById("payment-success").style.display = "block";
 
-ORDER DETAILS:
-${orderText}
-DELIVERY FEE: JMD $${deliveryFee.toFixed(2)}
-GRAND TOTAL: JMD $${total}
-
-Thank you!`;
-
-  const encodedMessage = encodeURIComponent(message);
-
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
-
-  paymentSuccess.style.display = "block";
-  checkoutForm.style.display = "none";
-
-  cart.length = 0;
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
+  cart = [];
+  updateCartDisplay?.();
+  document.getElementById("checkout-form").reset();
 }
 
 // Toggle menu dropdown
