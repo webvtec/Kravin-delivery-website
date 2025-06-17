@@ -317,20 +317,6 @@
     }
   });
 
-  // Stub function for payOnArrival
-  function payOnArrival() {
-    const digitsOnly = phoneInput.value.replace(/\D/g, "");
-    if (digitsOnly.length !== 10) {
-      document.getElementById("form-error").textContent = "Phone number must be exactly 10 digits.";
-      document.getElementById("form-error").style.display = "block";
-      return;
-    }
-    document.getElementById("form-error").style.display = "none";
-    document.getElementById("payment-success").style.display = "block";
-
-    // Add your Firebase order submission logic here
-  }
-
   // Track the current restaurant (default)
   let currentRestaurant = "KFC";
 
