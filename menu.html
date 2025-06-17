@@ -284,7 +284,7 @@
       <p id="total-price">Total: JMD $0.00</p>
 
       <!-- Payment Button -->
-      <button onclick="payOnArrival()">PAY UPON ARRIVAL</button>
+      <button type="button" onclick="payOnArrival()">PAY UPON ARRIVAL</button>
 
       <!-- Messages -->
       <p id="form-error" style="color:red; display:none;"></p>
@@ -773,33 +773,18 @@ window.onload = async () => {
   
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
-  console.log("✅ payOnArrival called");
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
-  const name = document.getElementById("name")?.value.trim();
-  const phone = document.getElementById("phone")?.value.trim();
-  const address = document.getElementById("address")?.value.trim();
-  console.log("Collected user info:", { name, phone, address });
+  if (!name || !phone || !address) {
+    formError.textContent = "Please fill out all fields.";
+    formError.style.display = "block";
+    return;
+  }
+  formError.style.display = "none";
 
-  if (!name || !phone || !address) {
-    console.warn("❌ Missing fields");
-    document.getElementById("form-error").textContent = "Please fill out all fields.";
-    document.getElementById("form-error").style.display = "block";
-    return;
-  }
-
-  document.getElementById("form-error").style.display = "none";
-  document.getElementById("payment-success").style.display = "block";
-
-  console.log("✅ Generating PDF...");
-  const jsPDF = window.jspdf?.jsPDF;
-  if (!jsPDF) {
-    console.error("❌ jsPDF not found");
-    return;
-  }
-
-  const doc = new jsPDF();
-}
-  
+  const doc = new jsPDF();
   let y = 10;
   doc.text(`Order for: ${name}`, 10, y); y += 10;
   doc.text(`Phone: ${phone}`, 10, y); y += 10;
