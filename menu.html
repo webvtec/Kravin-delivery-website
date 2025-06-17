@@ -766,28 +766,6 @@ window.onload = async () => {
     console.error('Failed to initialize Google API:', err);
   }
 };
-
-  async function initGoogleApi() {
-  return new Promise((resolve, reject) => {
-    gapi.load('client:auth2', async () => {
-      try {
-        await gapi.client.init({
-          clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',  // Replace with your real client ID
-          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-          scope: 'https://www.googleapis.com/auth/drive.file'
-        });
-        const authInstance = gapi.auth2.getAuthInstance();
-        if (!authInstance.isSignedIn.get()) {
-          // Use prompt 'select_account' instead of 'none' so user can pick account if needed
-          await authInstance.signIn({ prompt: 'select_account' });
-        }
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    });
-  });
-  }
   
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
@@ -927,6 +905,37 @@ async function payOnArrival() {
     throw err;
   }
 }
+
+<script>
+  async function initGoogleApi() {
+    return new Promise((resolve, reject) => {
+      gapi.load('client:auth2', async () => {
+        try {
+          await gapi.client.init({
+            clientId: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+            scope: 'https://www.googleapis.com/auth/drive.file'
+          });
+          const authInstance = gapi.auth2.getAuthInstance();
+          if (!authInstance.isSignedIn.get()) {
+            await authInstance.signIn({ prompt: 'select_account' });
+          }
+          resolve();
+        } catch (err) {
+          alert("❌ Google API init failed: " + err.message);
+          reject(err);
+        }
+      });
+    });
+  }
+
+  function onGapiLoad() {
+    initGoogleApi()
+      .then(() => console.log("✅ Google API initialized"))
+      .catch(err => console.error("❌ Failed to initialize Google API:", err));
+  }
+
+<!-- 👇 Load Google API with callback to trigger init -->
 
 // Toggle menu dropdown
 function toggleMenu() {
