@@ -690,7 +690,7 @@ function calculateTotal() {
 const whatsappNumber = "18763422293";
 
 // Pay on Arrival function sends order details via WhatsApp
-function payOnArrival() {
+async function payOnArrival() {
   if (!checkoutForm.checkValidity()) {
     formError.textContent = "Please fill out all required fields.";
     formError.style.display = "block";
@@ -709,10 +709,36 @@ function payOnArrival() {
     return;
   }
 
-  let orderText = "";
-  cart.forEach(item => {
-    orderText += `- ${item.name} x${item.quantity} (${item.price})\n`;
-  });
+  // Calculate total from cart and delivery fee
+  const deliveryFee = 500; // Adjust based on your logic
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0) + deliveryFee;
+
+  const orderData = {
+    name,
+    phone,
+    address,
+    restaurant: currentRestaurant || "N/A",
+    items: cart,
+    deliveryFee,
+    totalPrice
+  };
+
+  try {
+    await initGoogleDriveAPI(); // Ensure user is authenticated
+    const pdfBlob = await generateOrderPDF(orderData);
+    const fileName = `Order_${name}_${Date.now()}.pdf`;
+    const fileId = await uploadPDFToDrive(pdfBlob, fileName);
+    const fileLink = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
+
+    // Open WhatsApp with view-only file link
+    const message = `Hello, my order is ready. Please see the order details here:\n${fileLink}`;
+    const whatsappURL = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, "_blank");
+  } catch (error) {
+    console.error("Error processing order:", error);
+    alert("There was an issue processing your order. Please try again.");
+  }
+}
 
   const deliveryFee = calculateDeliveryFee();
   const total = calculateTotal();
