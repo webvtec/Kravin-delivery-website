@@ -539,29 +539,57 @@ async function payOnArrival() {
 
   document.getElementById("form-error").style.display = "none";
 
+  // Build the order details
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
   cart.forEach(item => {
     orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  // Format WhatsApp URL
-  const whatsappNumber = "18763422293"; // Replace this with your WhatsApp number
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderDetails)}`;
+  // Convert to a Blob
+  const fileBlob = new Blob([orderDetails], { type: 'text/plain' });
+  const file = new File([fileBlob], `Order_${name}_${Date.now()}.txt`);
 
-  // Open WhatsApp message
-  window.open(whatsappUrl, '_blank');
+  // Prepare FormData
+  const formData = new FormData();
+  formData.append('file', file);
 
-  document.getElementById("payment-success").style.display = "block";
+  try {
+    // Upload to GoFile.io
+    const uploadResponse = await fetch('https://api.gofile.io/uploadFile', {
+      method: 'POST',
+      body: formData
+    });
+    const uploadResult = await uploadResponse.json();
 
-  cart = [];
-  saveCart();
-  updateCartUI();
-  updateFeesAndTotal();
+    if (uploadResult.status !== "ok") {
+      alert('Upload failed. Please try again.');
+      return;
+    }
 
-  setTimeout(() => {
-    closeCheckout();
-  }, 2000);
+    const downloadLink = uploadResult.data.downloadPage;
+
+    // Open WhatsApp with the link
+    const whatsappNumber = "18763422293"; // Replace with your WhatsApp number
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order%20Received:%20${encodeURIComponent(downloadLink)}`;
+
+    window.open(whatsappUrl, '_blank');
+
+    document.getElementById("payment-success").style.display = "block";
+
+    cart = [];
+    saveCart();
+    updateCartUI();
+    updateFeesAndTotal();
+
+    setTimeout(() => {
+      closeCheckout();
+    }, 2000);
+
+  } catch (error) {
+    alert('Something went wrong while uploading the order.');
+    console.error(error);
+  }
 }
 </script>
 
