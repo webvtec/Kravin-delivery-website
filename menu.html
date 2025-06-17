@@ -472,34 +472,39 @@
   }
 
   function loadMenu(restaurant) {
-    currentRestaurant = restaurant;
-    const sheetId = sheets[restaurant];
-    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-    const container = document.getElementById("product-list");
-    container.innerHTML = "Loading menu...";
+  currentRestaurant = restaurant;
 
-    fetch(sheetUrl)
-      .then(res => res.json())
-      .then(data => {
-        container.innerHTML = "";
-        data.forEach(item => {
-          const product = document.createElement("div");
-          product.className = "product";
-          product.innerHTML = `
-            <img src="${item.Image}" alt="${item.Name}" />
-            <h3>${item.Name}</h3>
-            <p><strong>$${item.Price}</strong></p>
-            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-          `;
-          container.appendChild(product);
-        });
-      })
-      .catch(() => {
-        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-      });
-
-    document.getElementById("menu-dropdown").style.display = "none";
+  const sheetId = sheets[restaurant];
+  if (!sheetId) {
+    document.getElementById('product-list').innerHTML = 'Menu not available.';
+    return;
   }
+
+  const url = `https://opensheet.elk.sh/${sheetId}/Sheet1`;
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      const productList = document.getElementById('product-list');
+      productList.innerHTML = ''; // Clear existing items
+
+      data.forEach(item => {
+        const productDiv = document.createElement('div');
+        productDiv.className = 'product';
+        productDiv.innerHTML = `
+          <img src="${item.Image}" alt="${item.Name}">
+          <h3>${item.Name}</h3>
+          <p>${item.Price}</p>
+          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
+        `;
+        productList.appendChild(productDiv);
+      });
+    })
+    .catch(error => {
+      console.error('Error loading menu:', error);
+      document.getElementById('product-list').innerHTML = 'Failed to load menu.';
+    });
+}
 
   firebase.auth().onAuthStateChanged(user => {
     const profile = document.getElementById("user-profile");
