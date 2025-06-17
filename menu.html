@@ -9,9 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  
   <style>
     /* Style Pay Upon Arrival button */
     #checkout-form button[type="button"] {
@@ -564,52 +561,31 @@
 
   formError.style.display = "none";
 
-  // Request access token with the new GAI flow
-  tokenClient.callback = async (tokenResponse) => {
-    if (tokenResponse.error) {
-      alert('Google Auth Failed.');
-      console.error('Token error', tokenResponse);
-      return;
-    }
+  // Prepare order details
+  let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
+  cart.forEach(item => {
+    orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
+  });
+  orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-    accessToken = tokenResponse.access_token;
+  // Convert to Blob
+  const blob = new Blob([orderDetails], { type: 'text/plain' });
+  const formData = new FormData();
+  formData.append('file', blob, `Order_${name}_${Date.now()}.txt`);
 
-    let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
-    cart.forEach(item => {
-      orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
+  try {
+    // Upload to File.io
+    const uploadResponse = await fetch('https://file.io', {
+      method: 'POST',
+      body: formData
     });
-    orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-    const blob = new Blob([orderDetails], { type: 'application/pdf' });
-    const metadata = {
-      name: `Order_${name}_${Date.now()}.pdf`,
-      parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0']
-    };
+    const result = await uploadResponse.json();
 
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', blob);
+    if (result.success && result.link) {
+      const fileLink = result.link;
 
-    try {
-      const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-        body: form
-      });
-
-      const file = await uploadResponse.json();
-
-      await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-        method: 'POST',
-        headers: new Headers({
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'application/json'
-        }),
-        body: JSON.stringify({ role: 'reader', type: 'anyone' })
-      });
-
-      const fileLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
-
+      // Open WhatsApp with the file link
       const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(fileLink)}`;
       window.open(whatsappUrl, '_blank');
 
@@ -623,15 +599,14 @@
       setTimeout(() => {
         closeCheckout();
       }, 2000);
-
-    } catch (err) {
-      alert('Upload Failed.');
-      console.error('Upload error', err);
+    } else {
+      alert('Failed to upload the order. Please try again.');
     }
-  };
 
-  // Now request the token, which will trigger the callback above
-  tokenClient.requestAccessToken();
+  } catch (err) {
+    console.error('Upload error', err);
+    alert('An error occurred while uploading the order.');
+  }
 }
 
   function toggleMenu() {
