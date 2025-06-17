@@ -291,8 +291,7 @@
 </div>
 
   <body onload="initGoogleAuth()">
-  
-<!-- JavaScript -->
+    <!-- JavaScript -->
 <script>
   const phoneInput = document.getElementById("phone");
   const errorMessage = document.getElementById("error-message");
@@ -318,13 +317,9 @@
     }
   });
 
-  // Track the current restaurant (default)
   let currentRestaurant = "KFC";
-
-  // Cart array
   let cart = [];
 
-  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
     authDomain: "kravin-delivery-login.firebaseapp.com",
@@ -334,712 +329,323 @@
     appId: "1:1035748923136:web:bf68e1434d7bae3a7385e5"
   };
 
-  // Initialize Firebase
+  const sheets = {
+    KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
+    LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
+    Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
+    Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
+    Tasty: "16apFsQAAYRIf2EzdiW8M1KX8S4NoZwFoCwRlV1fH7_0"
+  };
+  const sheetName = "Sheet1";
+
   let tokenClient;
-let accessToken;
+  let accessToken = null;
 
-function initGoogleAuth() {
-  gapi.load('client', async () => {
-    try {
-      await gapi.client.init({
-        apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-      });
-
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: (resp) => {
-          if (resp.error) {
-            console.error('Token error', resp);
-            return;
-          }
-          accessToken = resp.access_token;
-          console.log('Access token acquired:', accessToken);
-          // Now you can enable your upload button or proceed with upload
-        }
-      });
-
-      // Request access token silently if possible (no prompt)
-      tokenClient.requestAccessToken({ prompt: '' });
-
-    } catch (error) {
-      console.error('Google API init error:', error);
-    }
-  });
-}
-  
-// Calculate delivery fee based on address input
-function calculateDeliveryFee() {
-  const address = document.getElementById("address").value.trim().toLowerCase();
-
-  if (address.includes("brompton")) {
-    return 1500;
-  } else if (address.includes("black river")) {
-    return 1000;
-  } else if (address.includes("speculation")) {
-    return 1000;
-  } else if (address.includes("luana")) {
-    return 1000;
-  } else if (address.includes("crawford")) {
-    return 1000;
-  } else if (address.includes("shrewsbury")) {
-    return 1000;
-  } else if (address.includes("cambridge")) {
-    return 1000;
-  } else if (address.includes("fyffes pen")) {
-    return 1000;
-  } else if (address.includes("oxford")) {
-    return 1000;
-  } else if (address.includes("lewis town")) {
-    return 1000;
-  } else if (address.includes("sandy ground")) {
-    return 1800;
-  } else if (address.includes("hodges")) {
-    return 1000;
-  }
-  return 0;
-}
-
-// Calculate total from cart items only
-function calculateCartTotal() {
-  let total = 0;
-
-  cart.forEach(item => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9\.]/g, ""));
-    if (!isNaN(priceNum)) {
-      total += priceNum * item.quantity;
-    }
-  });
-
-  return total;
-}
-
-// Update displayed delivery fee and total price
-function updateFeesAndTotal() {
-  const deliveryFee = calculateDeliveryFee();
-  const cartTotal = calculateCartTotal();
-  const grandTotal = cartTotal + deliveryFee;
-
-  const deliveryFeeElem = document.getElementById("delivery-fee");
-  if (deliveryFeeElem) {
-    deliveryFeeElem.textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
-  }
-
-  const totalElem = document.getElementById("total-price");
-  if (totalElem) {
-    totalElem.textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
-  }
-}
-
-// Update fees and total when address changes
-document.getElementById("address").addEventListener("input", updateFeesAndTotal);
-
-// Add item to cart, enforcing single restaurant per order
-function addToCart(name, price, image) {
-  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("YOU CAN ONLY ORDER FROM ONE RESTURANT AT A TIME");
-    return;
-  }
-
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-  }
-
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
-
-  // Show "Added to Cart" popup
-  showAddedToCartPopup();
-
-  // Open cart dropdown automatically
-  const cartDropdown = document.getElementById("cart-dropdown");
-  if (cartDropdown) {
-    cartDropdown.style.display = "block";
-  }
-}
-
-// Remove item from cart
-function removeFromCart(name) {
-  const index = cart.findIndex(i => i.name === name);
-  if (index > -1) {
-    cart.splice(index, 1);
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
-}
-
-// Increase item quantity
-function increaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    item.quantity += 1;
-    updateCartUI();
-    saveCart();
-    updateFeesAndTotal();
-  }
-}
-
-// Decrease item quantity
-function decreaseQuantity(name) {
-  const item = cart.find(i => i.name === name);
-  if (item) {
-    if (item.quantity > 1) {
-      item.quantity -= 1;
-      updateCartUI();
-      saveCart();
-      updateFeesAndTotal();
-    } else {
-      removeFromCart(name);
-    }
-  }
-}
-
-// Update cart UI
-function updateCartUI() {
-  const countElem = document.getElementById("cart-count");
-  const cartItemsElem = document.getElementById("cart-items");
-  const checkoutBtn = document.getElementById("checkout-btn");
-
-  const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalQuantity > 0) {
-    countElem.style.display = "inline-block";
-    countElem.textContent = totalQuantity;
-    checkoutBtn.style.display = "block";
-  } else {
-    countElem.style.display = "none";
-    checkoutBtn.style.display = "none";
-  }
-
-  if (cart.length === 0) {
-    cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
-    return;
-  }
-
-  cartItemsElem.innerHTML = "";
-  cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.style.display = "flex";
-    itemDiv.style.alignItems = "center";
-    itemDiv.style.marginBottom = "10px";
-
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
-      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
-      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
-    `;
-    cartItemsElem.appendChild(itemDiv);
-  });
-}
-
-// Toggle cart dropdown visibility
-function toggleCart() {
-  const dropdown = document.getElementById("cart-dropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-}
-
-// Close cart dropdown if clicked outside
-document.addEventListener('click', function(event) {
-  const cartDropdown = document.getElementById('cart-dropdown');
-  const cartIcon = document.querySelector('.cart-icon');
-  if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
-    cartDropdown.style.display = 'none';
-  }
-});
-
-// Save cart to localStorage
-function saveCart() {
-  localStorage.setItem('kravinCart', JSON.stringify(cart));
-}
-
-// Load cart from localStorage
-function loadCart() {
-  const savedCart = localStorage.getItem('kravinCart');
-  if (savedCart) {
-    cart = JSON.parse(savedCart);
-    updateCartUI();
-    updateFeesAndTotal();
-  }
-}
-
-// Google Sheets IDs for restaurants
-const sheets = {
-  KFC: "133XVcwdZQYVDidJbOflqpE49R2mTsQTwPvhBynCCcQ4",
-  LasVagas: "1cQjpoY_Yt4YCdbGGPKf3k3PNUrm7rXHWo4J3MXJnRNE",
-  Cloggys: "1Zp2p2d6mD8bGfZoylkJkXSwqboZNq4i-3yP8NRWaqXE",
-  Waterloo: "1Ya1yxamB0g2Ov8HSOeTLYd3oKzsPJeLJ0zgrn-y3Lvs",
-  Tasty: "16apFsQAAYRIf2EzdiW8M1KX8S4NoZwFoCwRlV1fH7_0"
-};
-const sheetName = "Sheet1";
-
-// Load menu from Google Sheets for selected restaurant
-function loadMenu(restaurant) {
-  currentRestaurant = restaurant; // update current restaurant
-  const sheetId = sheets[restaurant];
-  const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-  const container = document.getElementById("product-list");
-  container.innerHTML = "Loading menu...";
-
-  fetch(sheetUrl)
-    .then(res => res.json())
-    .then(data => {
-      container.innerHTML = "";
-      data.forEach(item => {
-        const product = document.createElement("div");
-        product.className = "product";
-        product.innerHTML = `
-          <img src="${item.Image}" alt="${item.Name}" />
-          <h3>${item.Name}</h3>
-          <p><strong>$${item.Price}</strong></p>
-          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
-        `;
-        container.appendChild(product);
-      });
-    })
-    .catch(() => {
-      container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
-    });
-
-  document.getElementById("menu-dropdown").style.display = "none";
-}
-
-// Firebase auth state listener: redirect if not logged in
-firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
-
-  if (!user) {
-    // Redirect to login page if not logged in
-    window.location.href = "login.html";
-    return;
-  }
-
-  // User is logged in - display profile
-  const name = user.displayName || user.email.split('@')[0];
-  const email = user.email;
-  const date = new Date(user.metadata.creationTime).toLocaleDateString();
-  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
-
-  profile.innerHTML = `
-    <img src="${avatar}" alt="avatar" />
-    <p><strong>${name}</strong></p>
-    <p>${email}</p>
-    <p>Joined: ${date}</p>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  `;
-});
-
-// Logout function
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  }).catch(error => {
-    alert("Logout failed: " + error.message);
-  });
-}
-
-// Checkout modal and form references
-const checkoutModal = document.getElementById("checkout-modal");
-const checkoutForm = document.getElementById("checkout-form");
-const formError = document.getElementById("form-error");
-const paymentSuccess = document.getElementById("payment-success");
-
-// Open checkout modal and render PayPal buttons
-function openCheckout() {
-  formError.style.display = "none";
-  paymentSuccess.style.display = "none";
-  checkoutForm.style.display = "block";
-  checkoutModal.style.display = "flex";
-}
-
-// Close checkout modal and reset form
-function closeCheckout() {
-  checkoutModal.style.display = "none";
-  checkoutForm.reset();
-  document.getElementById("paypal-button-container").innerHTML = "";
-}
-
-// Calculate total amount including delivery fee
-function calculateTotal() {
-  let total = calculateCartTotal();
-  total += calculateDeliveryFee();
-  return total.toFixed(2);
-}
-
-// WhatsApp number for "Pay Upon Arrival" (without +)
-const whatsappNumber = "18763422293";
-
-let tokenClient;
-let accessToken = null;
-
-async function initGoogleApi() {
-async function initGoogleApi() {
-  return new Promise((resolve, reject) => {
-    if (!window.gapi || !window.google?.accounts?.oauth2) {
-      return reject(new Error("Required Google APIs not loaded"));
-    }
-
+  function initGoogleAuth() {
     gapi.load('client', async () => {
       try {
-        // Initialize Drive API client with discovery doc
         await gapi.client.init({
+          apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
 
-        // Initialize the token client from GIS
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
           scope: 'https://www.googleapis.com/auth/drive.file',
           callback: (resp) => {
             if (resp.error) {
-              reject(resp);
-            } else {
-              accessToken = resp.access_token;
-              resolve();
+              console.error('Token error', resp);
+              return;
             }
-          },
+            accessToken = resp.access_token;
+            console.log('Access token acquired:', accessToken);
+          }
         });
 
-        // Request an access token silently if possible (no prompt)
-        tokenClient.requestAccessToken({ prompt: '' });
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
-}
-
-async function uploadToDrive(blob, filename) {
-  if (!accessToken) throw new Error("No access token");
-
-  const metadata = {
-    name: filename,
-    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // Your folder ID here
-    mimeType: 'application/pdf',
-  };
-
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', blob);
-
-  // Upload file
-  const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + accessToken },
-    body: form,
-  });
-
-  if (!uploadRes.ok) {
-    const errText = await uploadRes.text();
-    throw new Error('Upload failed: ' + errText);
-  }
-
-  const file = await uploadRes.json();
-
-  // Set file permission to public
-  const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + accessToken,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-  });
-
-  if (!permRes.ok) {
-    const errText = await permRes.text();
-    throw new Error('Permission setting failed: ' + errText);
-  }
-
-  // Return public file URL
-  return `https://drive.google.com/file/d/${file.id}/view`;
-}
-  
-// Call this on window load and await before enabling your payOnArrival
-window.onload = async () => {
-  try {
-    await initGoogleApi();
-    console.log('Google API initialized successfully');
-  } catch (err) {
-    console.error('Failed to initialize Google API:', err);
-  }
-};
-
-let tokenClient;
-let accessToken = null;
-
-async function initGoogleApi() {
-  return new Promise((resolve, reject) => {
-    if (!window.gapi) {
-      alert("❌ gapi not loaded");
-      return reject(new Error("gapi not loaded"));
-    }
-    if (!window.google || !google.accounts || !google.accounts.oauth2) {
-      alert("❌ Google Identity Services (GIS) library not loaded");
-      return reject(new Error("GIS library not loaded"));
-    }
-// Checkout modal and form references
-const checkoutModal = document.getElementById("checkout-modal");
-const checkoutForm = document.getElementById("checkout-form");
-const formError = document.getElementById("form-error");
-const paymentSuccess = document.getElementById("payment-success");
-
-// WhatsApp number (without +)
-const whatsappNumber = "18763422293";
-
-// Google API token client and access token (single declarations)
-let tokenClient;
-let accessToken = null;
-
-// Open checkout modal and reset error/success messages
-function openCheckout() {
-  formError.style.display = "none";
-  paymentSuccess.style.display = "none";
-  checkoutForm.style.display = "block";
-  checkoutModal.style.display = "flex";
-}
-
-// Close checkout modal and reset form & PayPal buttons container
-function closeCheckout() {
-  checkoutModal.style.display = "none";
-  checkoutForm.reset();
-  document.getElementById("paypal-button-container").innerHTML = "";
-}
-
-// Calculate total amount including delivery fee
-function calculateTotal() {
-  let total = calculateCartTotal();
-  total += calculateDeliveryFee();
-  return total.toFixed(2);
-}
-
-// Initialize Google API client and token client
-async function initGoogleApi() {
-  return new Promise((resolve, reject) => {
-    if (!window.gapi) {
-      alert("❌ Google API client (gapi) not loaded");
-      return reject(new Error("gapi not loaded"));
-    }
-    if (!window.google || !google.accounts || !google.accounts.oauth2) {
-      alert("❌ Google Identity Services (GIS) library not loaded");
-      return reject(new Error("GIS library not loaded"));
-    }
-
-    gapi.load('client', async () => {
-      try {
-        await gapi.client.init({
-          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-        });
-
-        // Initialize token client with callback to receive token
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-          scope: 'https://www.googleapis.com/auth/drive.file',
-          callback: (tokenResponse) => {
-            if (tokenResponse.error) {
-              console.error('Token client error:', tokenResponse.error);
-              reject(tokenResponse);
-            } else {
-              accessToken = tokenResponse.access_token;
-              resolve();
-            }
-          },
-        });
-
-        // Request access token silently (no prompt)
         tokenClient.requestAccessToken({ prompt: '' });
 
-      } catch (err) {
-        alert("❌ Google API init error: " + (err?.message || JSON.stringify(err)));
-        reject(err);
+      } catch (error) {
+        console.error('Google API init error:', error);
       }
     });
-  });
-}
+  }
+  function calculateDeliveryFee() {
+    const address = document.getElementById("address").value.trim().toLowerCase();
 
-// Upload PDF blob to Google Drive in specific folder and make it public readable
-async function uploadToDrive(blob, filename) {
-  if (!accessToken) throw new Error("No access token");
+    if (address.includes("brompton")) return 1500;
+    if (address.includes("black river")) return 1000;
+    if (address.includes("speculation")) return 1000;
+    if (address.includes("luana")) return 1000;
+    if (address.includes("crawford")) return 1000;
+    if (address.includes("shrewsbury")) return 1000;
+    if (address.includes("cambridge")) return 1000;
+    if (address.includes("fyffes pen")) return 1000;
+    if (address.includes("oxford")) return 1000;
+    if (address.includes("lewis town")) return 1000;
+    if (address.includes("sandy ground")) return 1800;
+    if (address.includes("hodges")) return 1000;
 
-  const metadata = {
-    name: filename,
-    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // Your Google Drive folder ID
-    mimeType: 'application/pdf',
-  };
-
-  const form = new FormData();
-  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  form.append("file", blob);
-
-  // Upload file
-  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + accessToken,
-    },
-    body: form,
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error("Upload failed: " + errText);
+    return 0;
   }
 
-  const file = await res.json();
-
-  // Set file permission to anyone with link can view
-  const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + accessToken,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ role: "reader", type: "anyone" }),
-  });
-
-  if (!permRes.ok) {
-    const permError = await permRes.text();
-    throw new Error("Permission setting failed: " + permError);
+  function calculateCartTotal() {
+    let total = 0;
+    cart.forEach(item => {
+      const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ""));
+      if (!isNaN(priceNum)) {
+        total += priceNum * item.quantity;
+      }
+    });
+    return total;
   }
 
-  return `https://drive.google.com/file/d/${file.id}/view`;
-}
+  function updateFeesAndTotal() {
+    const deliveryFee = calculateDeliveryFee();
+    const cartTotal = calculateCartTotal();
+    const grandTotal = cartTotal + deliveryFee;
 
-// Pay on Arrival function: generates PDF, uploads to Drive, sends WhatsApp message
-async function payOnArrival() {
-  try {
-    // Initialize Google API and get token
-    await initGoogleApi();
+    document.getElementById("delivery-fee").textContent = `Delivery Fee: JMD $${deliveryFee.toFixed(2)}`;
+    document.getElementById("total-price").textContent = `Total: JMD $${grandTotal.toFixed(2)}`;
+  }
 
-    // Get form input values
-    const name = document.getElementById('name').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const address = document.getElementById('address').value.trim();
+  document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-    if (!name || !phone || !address) {
-      alert("Please fill out all form fields.");
+  function addToCart(name, price, image) {
+    if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+      alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
       return;
     }
 
-    // Generate PDF using jsPDF (make sure jsPDF is loaded on your page)
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const existing = cart.find(i => i.name === name);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
+    }
 
-    let y = 10;
-    doc.text(`Order for: ${name}`, 10, y); y += 10;
-    doc.text(`Phone: ${phone}`, 10, y); y += 10;
-    doc.text(`Address: ${address}`, 10, y); y += 10;
-    doc.text('Items:', 10, y); y += 10;
-
-    let total = 0;
-    cart.forEach(item => {
-      const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ''));
-      const itemTotal = priceNum * item.quantity;
-      total += itemTotal;
-      doc.text(`${item.name} x${item.quantity} - $${itemTotal.toFixed(2)}`, 10, y);
-      y += 10;
-    });
-
-    const deliveryFee = calculateDeliveryFee();
-    const grandTotal = total + deliveryFee;
-
-    doc.text(`Delivery Fee: $${deliveryFee.toFixed(2)}`, 10, y); y += 10;
-    doc.text(`Total: $${grandTotal.toFixed(2)}`, 10, y);
-
-    const pdfBlob = doc.output('blob');
-
-    // Upload PDF to Drive and get the shareable link
-    const fileLink = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`);
-
-    // Open WhatsApp with message containing the Drive link
-    const message = `Hi, I just placed an order! Here's my order PDF: ${fileLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-
-    alert("Order processed! WhatsApp window opened.");
-
-    // Clear cart and update UI accordingly
-    cart.length = 0;
     updateCartUI();
     saveCart();
     updateFeesAndTotal();
-
-    // Close modal and reset form
-    closeCheckout();
-
-  } catch (err) {
-    alert("Error: " + (err.message || JSON.stringify(err)));
-    console.error(err);
+    showAddedToCartPopup();
+    document.getElementById("cart-dropdown").style.display = "block";
   }
-}
 
-// On window load, initialize menu, cart, and Google Identity token client silently (for refresh tokens)
-window.onload = () => {
-  loadMenu("KFC");
-  loadCart();
+  function removeFromCart(name) {
+    const index = cart.findIndex(i => i.name === name);
+    if (index > -1) {
+      cart.splice(index, 1);
+      updateCartUI();
+      saveCart();
+      updateFeesAndTotal();
+    }
+  }
 
-  // Optionally init Google Identity token client here if needed for other flows
-  if (window.google && google.accounts && google.accounts.oauth2) {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-      scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: (tokenResponse) => {
-        if (tokenResponse.error) {
-          console.error('Token error:', tokenResponse);
-        } else {
-          accessToken = tokenResponse.access_token;
-          console.log("Access token refreshed:", accessToken);
-        }
-      },
+  function increaseQuantity(name) {
+    const item = cart.find(i => i.name === name);
+    if (item) {
+      item.quantity += 1;
+      updateCartUI();
+      saveCart();
+      updateFeesAndTotal();
+    }
+  }
+
+  function decreaseQuantity(name) {
+    const item = cart.find(i => i.name === name);
+    if (item) {
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        updateCartUI();
+        saveCart();
+        updateFeesAndTotal();
+      } else {
+        removeFromCart(name);
+      }
+    }
+  }
+
+  function updateCartUI() {
+    const countElem = document.getElementById("cart-count");
+    const cartItemsElem = document.getElementById("cart-items");
+    const checkoutBtn = document.getElementById("checkout-btn");
+
+    const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+    if (totalQuantity > 0) {
+      countElem.style.display = "inline-block";
+      countElem.textContent = totalQuantity;
+      checkoutBtn.style.display = "block";
+    } else {
+      countElem.style.display = "none";
+      checkoutBtn.style.display = "none";
+    }
+
+    if (cart.length === 0) {
+      cartItemsElem.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
+
+    cartItemsElem.innerHTML = "";
+    cart.forEach(item => {
+      const itemDiv = document.createElement("div");
+      itemDiv.innerHTML = `
+        <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+        <div style="flex-grow:1;">
+          <strong>${item.name}</strong><br/>
+          ${item.price} x ${item.quantity}
+        </div>
+        <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
+        <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
+        <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+      `;
+      cartItemsElem.appendChild(itemDiv);
     });
-
-    // Try silent token request to pre-fetch token
-    tokenClient.requestAccessToken({ prompt: '' });
-  }
-};
-
-// Toggle menu dropdown
-function toggleMenu() {
-  const dropdown = document.getElementById("menu-dropdown");
-  dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-}
-
-// Show "Added to cart" popup notification
-function showAddedToCartPopup() {
-  let popup = document.getElementById("added-popup");
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "added-popup";
-    popup.textContent = "ADDED TO CART";
-    popup.style.position = "fixed";
-    popup.style.bottom = "20px";
-    popup.style.right = "20px";
-    popup.style.backgroundColor = "#28a745";
-    popup.style.color = "#fff";
-    popup.style.padding = "12px 20px";
-    popup.style.borderRadius = "8px";
-    popup.style.fontWeight = "bold";
-    popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-    popup.style.zIndex = "9999";
-    document.body.appendChild(popup);
   }
 
-  popup.style.opacity = "1";
+  function toggleCart() {
+    const dropdown = document.getElementById("cart-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
 
-  setTimeout(() => {
-    popup.style.transition = "opacity 0.5s";
-    popup.style.opacity = "0";
-  }, 1500);
-}
+  document.addEventListener('click', function (event) {
+    const cartDropdown = document.getElementById('cart-dropdown');
+    const cartIcon = document.querySelector('.cart-icon');
+    if (!cartDropdown.contains(event.target) && !cartIcon.contains(event.target)) {
+      cartDropdown.style.display = 'none';
+    }
+  });
 
+  function saveCart() {
+    localStorage.setItem('kravinCart', JSON.stringify(cart));
+  }
+
+  function loadCart() {
+    const savedCart = localStorage.getItem('kravinCart');
+    if (savedCart) {
+      cart = JSON.parse(savedCart);
+      updateCartUI();
+      updateFeesAndTotal();
+    }
+  }
+
+  function loadMenu(restaurant) {
+    currentRestaurant = restaurant;
+    const sheetId = sheets[restaurant];
+    const sheetUrl = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+    const container = document.getElementById("product-list");
+    container.innerHTML = "Loading menu...";
+
+    fetch(sheetUrl)
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = "";
+        data.forEach(item => {
+          const product = document.createElement("div");
+          product.className = "product";
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}" />
+            <h3>${item.Name}</h3>
+            <p><strong>$${item.Price}</strong></p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to cart</button>
+          `;
+          container.appendChild(product);
+        });
+      })
+      .catch(() => {
+        container.innerHTML = `<p style="color:red; text-align:center;">❌ Failed to load menu for ${restaurant}.</p>`;
+      });
+
+    document.getElementById("menu-dropdown").style.display = "none";
+  }
+  firebase.auth().onAuthStateChanged(user => {
+    const profile = document.getElementById("user-profile");
+
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const name = user.displayName || user.email.split('@')[0];
+    const email = user.email;
+    const date = new Date(user.metadata.creationTime).toLocaleDateString();
+    const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+    profile.innerHTML = `
+      <img src="${avatar}" alt="avatar" />
+      <p><strong>${name}</strong></p>
+      <p>${email}</p>
+      <p>Joined: ${date}</p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    `;
+  });
+
+  function logout() {
+    firebase.auth().signOut().then(() => {
+      window.location.href = "login.html";
+    }).catch(error => {
+      alert("Logout failed: " + error.message);
+    });
+  }
+
+  const checkoutModal = document.getElementById("checkout-modal");
+  const checkoutForm = document.getElementById("checkout-form");
+  const formError = document.getElementById("form-error");
+  const paymentSuccess = document.getElementById("payment-success");
+
+  function openCheckout() {
+    formError.style.display = "none";
+    paymentSuccess.style.display = "none";
+    checkoutForm.style.display = "block";
+    checkoutModal.style.display = "flex";
+  }
+
+  function closeCheckout() {
+    checkoutModal.style.display = "none";
+    checkoutForm.reset();
+  }
+
+  function calculateTotal() {
+    let total = calculateCartTotal();
+    total += calculateDeliveryFee();
+    return total.toFixed(2);
+  }
+
+  function toggleMenu() {
+    const dropdown = document.getElementById("menu-dropdown");
+    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+  }
+
+  function showAddedToCartPopup() {
+    let popup = document.getElementById("added-popup");
+    if (!popup) {
+      popup = document.createElement("div");
+      popup.id = "added-popup";
+      popup.textContent = "ADDED TO CART";
+      popup.style.position = "fixed";
+      popup.style.bottom = "20px";
+      popup.style.right = "20px";
+      popup.style.backgroundColor = "#28a745";
+      popup.style.color = "#fff";
+      popup.style.padding = "12px 20px";
+      popup.style.borderRadius = "8px";
+      popup.style.fontWeight = "bold";
+      popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+      popup.style.zIndex = "9999";
+      document.body.appendChild(popup);
+    }
+
+    popup.style.opacity = "1";
+
+    setTimeout(() => {
+      popup.style.transition = "opacity 0.5s";
+      popup.style.opacity = "0";
+    }, 1500);
+  }
+
+  window.onload = () => {
+    initGoogleAuth();
+    loadMenu("KFC");
+    loadCart();
+  }
 </script>
 </body>
 </html>
