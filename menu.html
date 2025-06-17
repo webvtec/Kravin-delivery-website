@@ -571,29 +571,85 @@
     checkoutForm.reset();
   }
 
-  function payOnArrival() {
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const address = document.getElementById("address").value.trim();
+  async function payOnArrival() {
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const address = document.getElementById("address").value.trim();
 
-    if (name === "" || phone === "" || address === "") {
-      formError.textContent = "Please fill out all fields.";
-      formError.style.display = "block";
-      return;
-    }
-
-    formError.style.display = "none";
-    paymentSuccess.style.display = "block";
-
-    cart = [];
-    saveCart();
-    updateCartUI();
-    updateFeesAndTotal();
-
-    setTimeout(() => {
-      closeCheckout();
-    }, 2000);
+  if (name === "" || phone === "" || address === "") {
+    formError.textContent = "Please fill out all fields.";
+    formError.style.display = "block";
+    return;
   }
+
+  // Request token right before upload
+  tokenClient.requestAccessToken({
+    prompt: '',
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        console.error('Token error', tokenResponse);
+        return;
+      }
+      accessToken = tokenResponse.access_token;
+
+      // Prepare PDF content
+      let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
+      cart.forEach(item => {
+        orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
+      });
+      orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
+
+      // Create PDF Blob
+      const blob = new Blob([orderDetails], { type: 'application/pdf' });
+      const metadata = {
+        name: `Order_${name}_${Date.now()}.pdf`,
+        parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0']
+      };
+
+      // Upload to Google Drive
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', blob);
+
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+        body: form
+      });
+
+      const file = await response.json();
+
+      // Make the file public
+      await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+        method: 'POST',
+        headers: new Headers({
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({ role: 'reader', type: 'anyone' })
+      });
+
+      // Get public link
+      const fileLink = `https://drive.google.com/file/d/${file.id}/view?usp=sharing`;
+
+      // Open WhatsApp with the file link
+      const whatsappUrl = `https://wa.me/18763422293?text=New%20Order%20Received:%20${encodeURIComponent(fileLink)}`;
+      window.open(whatsappUrl, '_blank');
+
+      formError.style.display = "none";
+      paymentSuccess.style.display = "block";
+
+      cart = [];
+      saveCart();
+      updateCartUI();
+      updateFeesAndTotal();
+
+      setTimeout(() => {
+        closeCheckout();
+      }, 2000);
+    }
+  });
+}
 
   function toggleMenu() {
     const dropdown = document.getElementById("menu-dropdown");
