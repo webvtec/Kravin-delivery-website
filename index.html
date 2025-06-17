@@ -302,7 +302,7 @@ function loadMenu(restaurant) {
       const productList = document.getElementById('product-list');
       productList.innerHTML = '';
 
-      // Group by categories
+      // Group items by categories
       const grouped = {};
       data.forEach(item => {
         if (!grouped[item.Category]) {
@@ -311,33 +311,29 @@ function loadMenu(restaurant) {
         grouped[item.Category].push(item);
       });
 
-      // Display categories and products
+      // Render each category section
       for (const category in grouped) {
         const section = document.createElement('div');
         section.className = 'category-section';
 
         const header = document.createElement('h2');
+        header.className = 'category-title';
         header.textContent = category.toUpperCase();
-        header.style.textAlign = 'center';
-        header.style.margin = '20px 0';
         section.appendChild(header);
 
         const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
-        grid.style.gap = '16px';
-        grid.style.padding = '10px';
+        grid.className = 'category-grid';
 
         grouped[category].forEach(item => {
-          const product = document.createElement('div');
-          product.className = 'product';
-          product.innerHTML = `
+          const productDiv = document.createElement('div');
+          productDiv.className = 'product';
+          productDiv.innerHTML = `
             <img src="${item.Image}" alt="${item.Name}">
             <h3>${item.Name}</h3>
             <p>${item.Price}</p>
             <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
           `;
-          grid.appendChild(product);
+          grid.appendChild(productDiv);
         });
 
         section.appendChild(grid);
