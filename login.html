@@ -98,18 +98,19 @@
   const password = document.getElementById("password").value;
 
   auth.createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      alert("Sign-up successful! Logging you in...");
-      window.location.href = "index.html";
-    })
-    .catch(e => {
-      if (e.code === 'auth/email-already-in-use') {
-        alert("Email address already in use by another account.");
-      } else {
-        alert("Signup error: " + e.message);
-      }
-    });
-});
+  .then(() => {
+    alert("Sign-up successful! Logging you in...");
+    window.location.href = "index.html";
+  })
+  .catch(e => {
+    if (e.code === 'auth/email-already-in-use') {
+      alert("Email address already in use by another account.");
+    } else if (e.code === 'auth/invalid-email') {
+      alert("SIGNUP ERROR: EMAIL ADDRESS IS INVALID.");
+    } else {
+      alert("Signup error: " + e.message);
+    }
+  });
 
     // Google Sign-In
     document.getElementById("googleSignInBtn").addEventListener("click", () => {
