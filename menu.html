@@ -624,303 +624,313 @@ function loadMenu(restaurant) {
   document.getElementById("menu-dropdown").style.display = "none";
 }
 
-// Firebase auth state listener: redirect if not logged in
-firebase.auth().onAuthStateChanged(user => {
-  const profile = document.getElementById("user-profile");
+<body>
 
-  if (!user) {
-    // Redirect to login page if not logged in
-    window.location.href = "login.html";
-    return;
-  }
+  <!-- Your existing body content here -->
 
-  // User is logged in - display profile
-  const name = user.displayName || user.email.split('@')[0];
-  const email = user.email;
-  const date = new Date(user.metadata.creationTime).toLocaleDateString();
-  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+  <div id="user-profile"></div>
+  <div id="checkout-modal" style="display:none;">
+    <form id="checkout-form">
+      <!-- your form fields like name, phone, address etc. -->
+      <input id="name" type="text" required />
+      <input id="phone" type="text" required />
+      <input id="address" type="text" required />
+      <button type="submit">Submit Order</button>
+    </form>
+    <div id="form-error" style="display:none; color:red;"></div>
+    <div id="payment-success" style="display:none; color:green;">Payment Success!</div>
+    <div id="paypal-button-container"></div>
+  </div>
 
-  profile.innerHTML = `
-    <img src="${avatar}" alt="avatar" />
-    <p><strong>${name}</strong></p>
-    <p>${email}</p>
-    <p>Joined: ${date}</p>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-  `;
-});
-
-// Logout function
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  }).catch(error => {
-    alert("Logout failed: " + error.message);
-  });
-}
-
-// Checkout modal and form references
-const checkoutModal = document.getElementById("checkout-modal");
-const checkoutForm = document.getElementById("checkout-form");
-const formError = document.getElementById("form-error");
-const paymentSuccess = document.getElementById("payment-success");
-
-// Open checkout modal and render PayPal buttons
-function openCheckout() {
-  formError.style.display = "none";
-  paymentSuccess.style.display = "none";
-  checkoutForm.style.display = "block";
-  checkoutModal.style.display = "flex";
-}
-
-// Close checkout modal and reset form
-function closeCheckout() {
-  checkoutModal.style.display = "none";
-  checkoutForm.reset();
-  document.getElementById("paypal-button-container").innerHTML = "";
-}
-
-// Calculate total amount including delivery fee
-function calculateTotal() {
-  let total = calculateCartTotal();
-  total += calculateDeliveryFee();
-  return total.toFixed(2);
-}
-
-<!-- WhatsApp number for "Pay Upon Arrival" (without +) -->
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script>
-  const whatsappNumber = "18763422293";
-
-  // Google OAuth 2 setup variables
-  const CLIENT_ID = "550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com"; // <-- REPLACE with your Google Client ID
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
-
-  // Load the API client and auth2 library
-  function loadGapiClient() {
-    return new Promise((resolve, reject) => {
-      gapi.load('client:auth2', async () => {
-        try {
-          await gapi.client.init({
-            clientId: CLIENT_ID,
-            scope: SCOPES,
-          });
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-  }
-
-  // Sign in the user with Google
-  async function googleSignIn() {
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance.isSignedIn.get()) {
-      await authInstance.signIn();
-    }
-  }
-
-  // Generate PDF Blob of the order
-  async function generateOrderPDF(orderData) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFontSize(16);
-    doc.text("Order Receipt", 20, 20);
-
-    doc.setFontSize(12);
-    doc.text(`Name: ${orderData.name}`, 20, 40);
-    doc.text(`Phone: ${orderData.phone}`, 20, 50);
-    doc.text(`Address: ${orderData.address}`, 20, 60);
-    doc.text(`Restaurant: ${orderData.restaurant}`, 20, 70);
-
-    let y = 90;
-    doc.text("Items:", 20, y);
-    orderData.items.forEach(item => {
-      y += 10;
-      doc.text(`- ${item.name} x${item.quantity} : JMD $${item.price}`, 25, y);
-    });
-
-    y += 20;
-    doc.text(`Delivery Fee: JMD $${orderData.deliveryFee}`, 20, y);
-    y += 10;
-    doc.text(`Total Price: JMD $${orderData.totalPrice}`, 20, y);
-
-    return doc.output("blob");
-  }
-
-  // Upload PDF to Google Drive and return file ID
-  async function uploadPDFToDrive(pdfBlob, fileName) {
-    const accessToken = gapi.auth.getToken().access_token;
-
-    const metadata = {
-      name: fileName,
-      mimeType: 'application/pdf',
-      // Optionally specify parent folder ID here
-      // parents: ['your-folder-id']
-    };
-
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', pdfBlob);
-
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method: 'POST',
-      headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-      body: form
-    });
-
-    const data = await response.json();
-    if (data.id) {
-      return data.id;
-    } else {
-      throw new Error('Failed to upload file: ' + JSON.stringify(data));
-    }
-  }
-
-  // Create a shareable link with view-only permissions
-  async function createShareableLink(fileId) {
-    const accessToken = gapi.auth.getToken().access_token;
-
-    // Set permission to anyone with the link can view
-    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        role: 'reader',
-        type: 'anyone'
-      })
-    });
-
-    return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-  }
-
-  // Utility to get order data from your form & cart (make sure cart and currentRestaurant are defined globally)
-  function getOrderData() {
-    const deliveryFeeValue = calculateDeliveryFee(); // your function to get delivery fee
-    const totalPriceValue = calculateCartTotal() + deliveryFeeValue;
-
-    return {
-      name: document.getElementById('name').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      address: document.getElementById('address').value.trim(),
-      restaurant: currentRestaurant,
-      items: cart, // your cart array [{name, quantity, price}, ...]
-      deliveryFee: deliveryFeeValue,
-      totalPrice: totalPriceValue
-    };
-  }
-
-  // Main order submit function
-  async function submitOrder() {
-    try {
-      // Validate phone number length exactly 10 digits
-      const phoneDigits = document.getElementById('phone').value.replace(/\D/g, '');
-      if (phoneDigits.length !== 10) {
-        alert("Phone number must be exactly 10 digits.");
+  <script>
+    // Firebase auth state listener: redirect if not logged in
+    firebase.auth().onAuthStateChanged(user => {
+      const profile = document.getElementById("user-profile");
+      if (!user) {
+        window.location.href = "login.html";
         return;
       }
 
-      // Optional: validate other fields here, e.g. name, address
+      if (!profile) return; // Avoid errors if element missing
 
-      // Sign in user to Google
-      await googleSignIn();
+      const name = user.displayName || user.email.split('@')[0];
+      const email = user.email;
+      const date = new Date(user.metadata.creationTime).toLocaleDateString();
+      const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
 
-      // Get order data
-      const orderData = getOrderData();
-
-      // Generate PDF Blob
-      const pdfBlob = await generateOrderPDF(orderData);
-
-      // Create file name
-      const fileName = `Order_${orderData.name}_${Date.now()}.pdf`;
-
-      // Upload PDF to Google Drive
-      const fileId = await uploadPDFToDrive(pdfBlob, fileName);
-
-      // Create shareable link
-      const shareLink = await createShareableLink(fileId);
-
-      // Open WhatsApp with message
-      const message = encodeURIComponent(`New order from ${orderData.name}.\nView order PDF: ${shareLink}`);
-      window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
-
-      // Show success message
-      document.getElementById("payment-success").style.display = "block";
-
-      // Clear cart and reset form
-      cart = [];
-      updateCartDisplay?.();
-      document.getElementById("checkout-form").reset();
-    } catch (error) {
-      console.error("Error submitting order:", error);
-      alert("Error processing your order. Please try again.");
-    }
-  }
-
-  // Hook submitOrder to your form submission
-  window.onload = async () => {
-    await loadGapiClient();
-    document.getElementById('checkout-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      submitOrder();
+      profile.innerHTML = `
+        <img src="${avatar}" alt="avatar" />
+        <p><strong>${name}</strong></p>
+        <p>${email}</p>
+        <p>Joined: ${date}</p>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      `;
     });
 
-    // Load initial menu and cart if you have those functions
-    if(typeof loadMenu === 'function') loadMenu("KFC");
-    if(typeof loadCart === 'function') loadCart();
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      }).catch(error => {
+        alert("Logout failed: " + error.message);
+      });
+    }
 
-    // Optional: validate phone input live
-    const phoneInput = document.getElementById('phone');
-    phoneInput.addEventListener('input', () => {
-      const digits = phoneInput.value.replace(/\D/g, '');
-      if (digits.length !== 10) {
-        phoneInput.setCustomValidity("Phone number must be exactly 10 digits.");
-      } else {
-        phoneInput.setCustomValidity("");
+    // DOM elements - check existence before use
+    const checkoutModal = document.getElementById("checkout-modal");
+    const checkoutForm = document.getElementById("checkout-form");
+    const formError = document.getElementById("form-error");
+    const paymentSuccess = document.getElementById("payment-success");
+
+    function openCheckout() {
+      if (!formError || !paymentSuccess || !checkoutForm || !checkoutModal) return;
+      formError.style.display = "none";
+      paymentSuccess.style.display = "none";
+      checkoutForm.style.display = "block";
+      checkoutModal.style.display = "flex";
+    }
+
+    function closeCheckout() {
+      if (!checkoutModal || !checkoutForm) return;
+      checkoutModal.style.display = "none";
+      checkoutForm.reset();
+      const paypalContainer = document.getElementById("paypal-button-container");
+      if (paypalContainer) paypalContainer.innerHTML = "";
+    }
+
+    // Make sure these functions are defined somewhere else
+    function calculateTotal() {
+      if (typeof calculateCartTotal !== "function" || typeof calculateDeliveryFee !== "function") {
+        console.error("calculateCartTotal or calculateDeliveryFee function is not defined");
+        return "0.00";
       }
-    });
-  };
-
-  // Toggle menu dropdown
-  function toggleMenu() {
-    const dropdown = document.getElementById("menu-dropdown");
-    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-  }
-
-  // Show popup when item added to cart
-  function showAddedToCartPopup() {
-    let popup = document.getElementById("added-popup");
-    if (!popup) {
-      popup = document.createElement("div");
-      popup.id = "added-popup";
-      popup.textContent = "ADDED TO CART";
-      popup.style.position = "fixed";
-      popup.style.bottom = "20px";
-      popup.style.right = "20px";
-      popup.style.backgroundColor = "#28a745";
-      popup.style.color = "#fff";
-      popup.style.padding = "12px 20px";
-      popup.style.borderRadius = "8px";
-      popup.style.fontWeight = "bold";
-      popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-      popup.style.zIndex = "9999";
-      document.body.appendChild(popup);
+      let total = calculateCartTotal();
+      total += calculateDeliveryFee();
+      return total.toFixed(2);
     }
 
-    popup.style.opacity = "1";
+    const whatsappNumber = "18763422293";
 
-    setTimeout(() => {
-      popup.style.transition = "opacity 0.5s";
-      popup.style.opacity = "0";
-    }, 1500);
-  }
-</script>
+    // Google OAuth 2 setup variables
+    const CLIENT_ID = "550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com";
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
+
+    // Load the API client and auth2 library
+    function loadGapiClient() {
+      return new Promise((resolve, reject) => {
+        gapi.load('client:auth2', async () => {
+          try {
+            await gapi.client.init({
+              clientId: CLIENT_ID,
+              scope: SCOPES,
+            });
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    async function googleSignIn() {
+      const authInstance = gapi.auth2.getAuthInstance();
+      if (!authInstance.isSignedIn.get()) {
+        await authInstance.signIn();
+      }
+    }
+
+    async function generateOrderPDF(orderData) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text("Order Receipt", 20, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Name: ${orderData.name}`, 20, 40);
+      doc.text(`Phone: ${orderData.phone}`, 20, 50);
+      doc.text(`Address: ${orderData.address}`, 20, 60);
+      doc.text(`Restaurant: ${orderData.restaurant}`, 20, 70);
+
+      let y = 90;
+      doc.text("Items:", 20, y);
+      orderData.items.forEach(item => {
+        y += 10;
+        doc.text(`- ${item.name} x${item.quantity} : JMD $${item.price}`, 25, y);
+      });
+
+      y += 20;
+      doc.text(`Delivery Fee: JMD $${orderData.deliveryFee}`, 20, y);
+      y += 10;
+      doc.text(`Total Price: JMD $${orderData.totalPrice}`, 20, y);
+
+      return doc.output("blob");
+    }
+
+    async function uploadPDFToDrive(pdfBlob, fileName) {
+      const authInstance = gapi.auth2.getAuthInstance();
+      const currentUser = authInstance.currentUser.get();
+      const accessToken = currentUser.getAuthResponse().access_token;
+
+      const metadata = {
+        name: fileName,
+        mimeType: 'application/pdf',
+      };
+
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', pdfBlob);
+
+      const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+        method: 'POST',
+        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+        body: form
+      });
+
+      const data = await response.json();
+      if (data.id) {
+        return data.id;
+      } else {
+        throw new Error('Failed to upload file: ' + JSON.stringify(data));
+      }
+    }
+
+    async function createShareableLink(fileId) {
+      const authInstance = gapi.auth2.getAuthInstance();
+      const currentUser = authInstance.currentUser.get();
+      const accessToken = currentUser.getAuthResponse().access_token;
+
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          role: 'reader',
+          type: 'anyone'
+        })
+      });
+
+      return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+    }
+
+    // IMPORTANT: Make sure these globals are defined somewhere:
+    // let cart = [...]; // Your cart items [{name, quantity, price}, ...]
+    // let currentRestaurant = "KFC"; // Example
+
+    function getOrderData() {
+      const deliveryFeeValue = typeof calculateDeliveryFee === "function" ? calculateDeliveryFee() : 0;
+      const totalPriceValue = (typeof calculateCartTotal === "function" ? calculateCartTotal() : 0) + deliveryFeeValue;
+
+      return {
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        restaurant: typeof currentRestaurant !== "undefined" ? currentRestaurant : "Unknown",
+        items: typeof cart !== "undefined" ? cart : [],
+        deliveryFee: deliveryFeeValue,
+        totalPrice: totalPriceValue
+      };
+    }
+
+    async function submitOrder() {
+      try {
+        const phoneDigits = document.getElementById('phone').value.replace(/\D/g, '');
+        if (phoneDigits.length !== 10) {
+          alert("Phone number must be exactly 10 digits.");
+          return;
+        }
+
+        await googleSignIn();
+
+        const orderData = getOrderData();
+
+        const pdfBlob = await generateOrderPDF(orderData);
+        const fileName = `Order_${orderData.name}_${Date.now()}.pdf`;
+
+        const fileId = await uploadPDFToDrive(pdfBlob, fileName);
+
+        const shareLink = await createShareableLink(fileId);
+
+        const message = encodeURIComponent(`New order from ${orderData.name}.\nView order PDF: ${shareLink}`);
+        window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+
+        if (paymentSuccess) paymentSuccess.style.display = "block";
+
+        // Clear cart and reset form if defined
+        if (typeof cart !== "undefined") cart = [];
+        if (typeof updateCartDisplay === "function") updateCartDisplay();
+        if (checkoutForm) checkoutForm.reset();
+
+      } catch (error) {
+        console.error("Error submitting order:", error);
+        alert("Error processing your order. Please try again.");
+      }
+    }
+
+    window.onload = async () => {
+      await loadGapiClient();
+
+      if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          submitOrder();
+        });
+      }
+
+      if (typeof loadMenu === "function") loadMenu("KFC");
+      if (typeof loadCart === "function") loadCart();
+
+      const phoneInput = document.getElementById('phone');
+      if (phoneInput) {
+        phoneInput.addEventListener('input', () => {
+          const digits = phoneInput.value.replace(/\D/g, '');
+          if (digits.length !== 10) {
+            phoneInput.setCustomValidity("Phone number must be exactly 10 digits.");
+          } else {
+            phoneInput.setCustomValidity("");
+          }
+        });
+      }
+    };
+
+    function toggleMenu() {
+      const dropdown = document.getElementById("menu-dropdown");
+      if (!dropdown) return;
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    function showAddedToCartPopup() {
+      let popup = document.getElementById("added-popup");
+      if (!popup) {
+        popup = document.createElement("div");
+        popup.id = "added-popup";
+        popup.textContent = "ADDED TO CART";
+        popup.style.position = "fixed";
+        popup.style.bottom = "20px";
+        popup.style.right = "20px";
+        popup.style.backgroundColor = "#28a745";
+        popup.style.color = "#fff";
+        popup.style.padding = "12px 20px";
+        popup.style.borderRadius = "8px";
+        popup.style.fontWeight = "bold";
+        popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+        popup.style.zIndex = "9999";
+        document.body.appendChild(popup);
+      }
+
+      popup.style.opacity = "1";
+
+      setTimeout(() => {
+        popup.style.transition = "opacity 0.5s";
+        popup.style.opacity = "0";
+      }, 1500);
+    }
+  </script>
+
+  <!-- Moved these script tags outside of the JS block -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 </body>
 </html>
