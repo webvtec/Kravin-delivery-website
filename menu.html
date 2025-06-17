@@ -787,15 +787,60 @@ async function initGoogleApi() {
       alert("❌ Google Identity Services (GIS) library not loaded");
       return reject(new Error("GIS library not loaded"));
     }
+// Checkout modal and form references
+const checkoutModal = document.getElementById("checkout-modal");
+const checkoutForm = document.getElementById("checkout-form");
+const formError = document.getElementById("form-error");
+const paymentSuccess = document.getElementById("payment-success");
+
+// WhatsApp number (without +)
+const whatsappNumber = "18763422293";
+
+// Google API token client and access token (single declarations)
+let tokenClient;
+let accessToken = null;
+
+// Open checkout modal and reset error/success messages
+function openCheckout() {
+  formError.style.display = "none";
+  paymentSuccess.style.display = "none";
+  checkoutForm.style.display = "block";
+  checkoutModal.style.display = "flex";
+}
+
+// Close checkout modal and reset form & PayPal buttons container
+function closeCheckout() {
+  checkoutModal.style.display = "none";
+  checkoutForm.reset();
+  document.getElementById("paypal-button-container").innerHTML = "";
+}
+
+// Calculate total amount including delivery fee
+function calculateTotal() {
+  let total = calculateCartTotal();
+  total += calculateDeliveryFee();
+  return total.toFixed(2);
+}
+
+// Initialize Google API client and token client
+async function initGoogleApi() {
+  return new Promise((resolve, reject) => {
+    if (!window.gapi) {
+      alert("❌ Google API client (gapi) not loaded");
+      return reject(new Error("gapi not loaded"));
+    }
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      alert("❌ Google Identity Services (GIS) library not loaded");
+      return reject(new Error("GIS library not loaded"));
+    }
 
     gapi.load('client', async () => {
       try {
-        console.log("Initializing Google API client...");
         await gapi.client.init({
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
-        console.log("Google API client initialized");
 
+        // Initialize token client with callback to receive token
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
           scope: 'https://www.googleapis.com/auth/drive.file',
@@ -805,53 +850,77 @@ async function initGoogleApi() {
               reject(tokenResponse);
             } else {
               accessToken = tokenResponse.access_token;
-              console.log("Access token received:", accessToken);
               resolve();
             }
           },
         });
 
-        // Request access token silently without prompt
+        // Request access token silently (no prompt)
         tokenClient.requestAccessToken({ prompt: '' });
 
       } catch (err) {
-        console.error("Google API client init error:", err);
-        alert("❌ Google API client init failed: " + (err?.message || JSON.stringify(err)));
+        alert("❌ Google API init error: " + (err?.message || JSON.stringify(err)));
         reject(err);
       }
     });
   });
 }
-  
-// --- Google Identity Setup ---
-let tokenClient;
-let accessToken = null;
 
-function initGoogleIdentity() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/drive.file',
-    callback: (tokenResponse) => {
-      if (tokenResponse.error) {
-        console.error('Token error:', tokenResponse);
-        alert("❌ Failed to get access token");
-        return;
-      }
-      accessToken = tokenResponse.access_token;
-      console.log("✅ Access token received:", accessToken);
+// Upload PDF blob to Google Drive in specific folder and make it public readable
+async function uploadToDrive(blob, filename) {
+  if (!accessToken) throw new Error("No access token");
+
+  const metadata = {
+    name: filename,
+    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // Your Google Drive folder ID
+    mimeType: 'application/pdf',
+  };
+
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", blob);
+
+  // Upload file
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + accessToken,
     },
+    body: form,
   });
-}
-  
-  window.onload = function () {
-  initGoogleIdentity();
-};
 
-// Pay on Arrival function sends order details via WhatsApp
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error("Upload failed: " + errText);
+  }
+
+  const file = await res.json();
+
+  // Set file permission to anyone with link can view
+  const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + accessToken,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role: "reader", type: "anyone" }),
+  });
+
+  if (!permRes.ok) {
+    const permError = await permRes.text();
+    throw new Error("Permission setting failed: " + permError);
+  }
+
+  return `https://drive.google.com/file/d/${file.id}/view`;
+}
+
+// Pay on Arrival function: generates PDF, uploads to Drive, sends WhatsApp message
 async function payOnArrival() {
   try {
+    // Initialize Google API and get token
     await initGoogleApi();
 
+    // Get form input values
     const name = document.getElementById('name').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const address = document.getElementById('address').value.trim();
@@ -861,7 +930,7 @@ async function payOnArrival() {
       return;
     }
 
-    // Generate PDF with jsPDF (make sure jsPDF is included in your page)
+    // Generate PDF using jsPDF (make sure jsPDF is loaded on your page)
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -888,90 +957,54 @@ async function payOnArrival() {
 
     const pdfBlob = doc.output('blob');
 
-    // Upload to Drive and get public link
+    // Upload PDF to Drive and get the shareable link
     const fileLink = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`);
 
-    // Open WhatsApp with pre-filled message containing the Drive link
+    // Open WhatsApp with message containing the Drive link
     const message = `Hi, I just placed an order! Here's my order PDF: ${fileLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
 
     alert("Order processed! WhatsApp window opened.");
 
-    // Clear your cart and update UI accordingly
+    // Clear cart and update UI accordingly
     cart.length = 0;
     updateCartUI();
     saveCart();
     updateFeesAndTotal();
+
+    // Close modal and reset form
+    closeCheckout();
 
   } catch (err) {
     alert("Error: " + (err.message || JSON.stringify(err)));
     console.error(err);
   }
 }
-  
-async function uploadToDrive(blob, filename, accessToken) {
-  alert("📤 Uploading to Google Drive...");
-  try {
-    if (!accessToken) throw new Error("No access token");
 
-    const metadata = {
-      name: filename,
-      parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'],
-      mimeType: 'application/pdf',
-    };
+// On window load, initialize menu, cart, and Google Identity token client silently (for refresh tokens)
+window.onload = () => {
+  loadMenu("KFC");
+  loadCart();
 
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", blob);
-
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: new Headers({ Authorization: "Bearer " + accessToken }),
-      body: form,
-    });
-
-    console.log("Upload response status:", res.status);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Upload failed:", errorText);
-      throw new Error(errorText);
-    }
-
-    const file = await res.json();
-    console.log("Uploaded file metadata:", file);
-
-    const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-        "Content-Type": "application/json",
+  // Optionally init Google Identity token client here if needed for other flows
+  if (window.google && google.accounts && google.accounts.oauth2) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: (tokenResponse) => {
+        if (tokenResponse.error) {
+          console.error('Token error:', tokenResponse);
+        } else {
+          accessToken = tokenResponse.access_token;
+          console.log("Access token refreshed:", accessToken);
+        }
       },
-      body: JSON.stringify({ role: "reader", type: "anyone" }),
     });
 
-    console.log("Permission response status:", permRes.status);
-    if (!permRes.ok) {
-      const permError = await permRes.text();
-      console.error("Permission setting failed:", permError);
-      throw new Error(permError);
-    }
-
-    const link = `https://drive.google.com/file/d/${file.id}/view`;
-    alert("✅ Public link ready: " + link);
-    return link;
-
-  } catch (err) {
-    alert("❌ Upload or permission failed: " + err.message);
-    console.error(err);
-    throw err;
+    // Try silent token request to pre-fetch token
+    tokenClient.requestAccessToken({ prompt: '' });
   }
-}
-
-  function onGapiLoad() {
-    initGoogleApi()
-      .then(() => console.log("✅ Google API initialized"))
-      .catch(err => console.error("❌ Failed to initialize Google API:", err));
-  }
+};
 
 // Toggle menu dropdown
 function toggleMenu() {
@@ -979,14 +1012,8 @@ function toggleMenu() {
   dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
 
-// Load default menu and cart on page load
-window.onload = () => {
-  loadMenu("KFC");
-  loadCart();
-};
-
-  // Show added to cart popup
-  function showAddedToCartPopup() {
+// Show "Added to cart" popup notification
+function showAddedToCartPopup() {
   let popup = document.getElementById("added-popup");
   if (!popup) {
     popup = document.createElement("div");
