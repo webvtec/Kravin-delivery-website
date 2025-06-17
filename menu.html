@@ -537,7 +537,7 @@ async function payOnArrival() {
     fe.style.display = "block";
     return;
   }
-  fe.style.display = "none";
+  document.getElementById("form-error").style.display = "none";
 
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
   cart.forEach(item => {
@@ -545,39 +545,46 @@ async function payOnArrival() {
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  const form = new FormData();
-  form.append("file", new Blob([orderDetails], { type: "text/plain" }), `Order_${name}_${Date.now()}.txt`);
+  const formData = new FormData();
+  formData.append("file", new Blob([orderDetails], { type: "text/plain" }), `Order_${name}_${Date.now()}.txt`);
 
   try {
-    const resp = await fetch("https://api.anonymousfiles.io/", {
-      method: "POST",
-      body: form
+    const response = await fetch('https://api.anonfiles.com/upload', {
+      method: 'POST',
+      body: formData
     });
-    const json = await resp.json();
 
-    if (!json.url) {
+    const result = await response.json();
+
+    if (!result.status) {
       alert("Upload failed. Please try again.");
-      console.error("AnonymousFiles error:", json);
+      console.error(result);
       return;
     }
 
-    const link = json.url;
-    const whatsappNumber = "18763422293"; // Replace with your number
-    const whatsappUrl =
-      `https://wa.me/${whatsappNumber}?text=New%20Order:%20${encodeURIComponent(link)}`;
+    const fileUrl = result.data.file.url.full;
 
-    window.open(whatsappUrl, "_blank");
+    // Build WhatsApp message
+    const whatsappNumber = "18763422293"; // Your WhatsApp number here
+    const message = `NEW ORDER RECEIVED\n\nCustomer: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nOrder Link: ${fileUrl}`;
+
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
 
     document.getElementById("payment-success").style.display = "block";
+
     cart = [];
     saveCart();
     updateCartUI();
     updateFeesAndTotal();
 
     setTimeout(closeCheckout, 2000);
-  } catch (err) {
-    alert("Upload error. Check console for details.");
-    console.error("Upload exception:", err);
+
+  } catch (error) {
+    alert("Upload error. Please try again later.");
+    console.error(error);
   }
 }
 </script>
