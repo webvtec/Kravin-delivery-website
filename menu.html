@@ -799,55 +799,62 @@ const doc = new jsPDF();
   }
 }
 
-  async function uploadToDrive(pdfBlob, fileName) {
-  const metadata = {
-    name: fileName,
-    mimeType: "application/pdf",
-    parents: ["12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0"] // Make sure this is your actual folder ID
-  };
+  async function uploadToDrive(blob, filename) {
+  alert("📤 Uploading to Google Drive...");
 
   const accessToken = gapi.auth.getToken()?.access_token;
   if (!accessToken) {
-    alert("❌ No access token. User is not signed in.");
-    throw new Error("User is not authenticated.");
+    alert("❌ No access token. Please make sure you're signed in.");
+    throw new Error("No access token");
   }
+
+  const metadata = {
+    name: filename,
+    parents: ['12Oh8IYfkmT-USxD613Yag3LhzF9LUnX0'], // your folder ID
+    mimeType: 'application/pdf',
+  };
 
   const form = new FormData();
   form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  form.append("file", pdfBlob);
+  form.append("file", blob);
 
-  alert("📤 Uploading to Google Drive...");
-  const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
-    method: "POST",
-    headers: new Headers({ Authorization: `Bearer ${accessToken}` }),
-    body: form
-  });
+  try {
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: new Headers({ Authorization: "Bearer " + accessToken }),
+      body: form,
+    });
 
-  const result = await response.json();
-  if (!result.id) {
-    alert("❌ Upload failed: " + JSON.stringify(result));
-    throw new Error("Upload failed");
+    if (!res.ok) {
+      const errorText = await res.text();
+      alert("❌ Upload failed: " + errorText);
+      throw new Error(errorText);
+    }
+
+    const file = await res.json();
+    alert("✅ File uploaded! Now making it public...");
+
+    // Set permissions to public
+    await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/permissions`, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        role: "reader",
+        type: "anyone",
+      }),
+    });
+
+    const link = `https://drive.google.com/file/d/${file.id}/view`;
+    alert("✅ Public link ready: " + link);
+    return link;
+
+  } catch (err) {
+    alert("❌ Upload or permission failed: " + err.message);
+    throw err;
   }
-
-  alert("✅ File uploaded! Now making it public...");
-
-  const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${result.id}/permissions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ role: "reader", type: "anyone" })
-  });
-
-  const permResult = await permRes.json();
-  if (permResult.error) {
-    alert("❌ Permission error: " + JSON.stringify(permResult));
-    throw new Error("Permission setting failed");
-  }
-
-  alert("✅ All done!");
-  return `https://drive.google.com/file/d/${result.id}/view?usp=sharing`;
 }
 
 // Toggle menu dropdown
