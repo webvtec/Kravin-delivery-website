@@ -335,16 +335,37 @@
   };
 
   // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+  let tokenClient;
+let accessToken;
 
-  function initGoogleAuth() {
-  gapi.load("client:auth2", async () => {
-    await gapi.client.init({
-      apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
-      clientId: "550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com.apps.googleusercontent.com",
-      scope: "https://www.googleapis.com/auth/drive.file"
-    });
-    gapi.auth2.getAuthInstance().signIn(); // This will auto-auth on load
+function initGoogleAuth() {
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({
+        apiKey: 'AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ',
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+      });
+
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (resp) => {
+          if (resp.error) {
+            console.error('Token error', resp);
+            return;
+          }
+          accessToken = resp.access_token;
+          console.log('Access token acquired:', accessToken);
+          // Now you can enable your upload button or proceed with upload
+        }
+      });
+
+      // Request access token silently if possible (no prompt)
+      tokenClient.requestAccessToken({ prompt: '' });
+
+    } catch (error) {
+      console.error('Google API init error:', error);
+    }
   });
 }
   
