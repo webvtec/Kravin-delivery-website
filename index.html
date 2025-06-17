@@ -595,7 +595,7 @@ function payOnArrival() {
   }
   document.getElementById("form-error").style.display = "none";
 
-  let orderDetails = `NEW ORDER RECEIVED\n\nCustomer: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
+  let orderDetails = `NEW ORDER RECEIVED\n\nRestaurant: ${currentRestaurant}\nCustomer: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
 
   cart.forEach(item => {
     orderDetails += `${item.name} - ${item.price} x ${item.quantity}\n`;
