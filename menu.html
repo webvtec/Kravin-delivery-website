@@ -537,7 +537,7 @@ async function payOnArrival() {
     fe.style.display = "block";
     return;
   }
-  document.getElementById("form-error").style.display = "none";
+  fe.style.display = "none";
 
   let orderDetails = `Order for ${name}\nPhone: ${phone}\nAddress: ${address}\n\nItems:\n`;
   cart.forEach(item => {
@@ -545,25 +545,27 @@ async function payOnArrival() {
   });
   orderDetails += `\nTotal: ${document.getElementById("total-price").textContent}`;
 
-  const formData = new FormData();
-  formData.append("file", 
-    new Blob([orderDetails], { type: "text/plain" }), 
-    `Order_${name}_${Date.now()}.txt`
-  );
+  const form = new FormData();
+  form.append("file", new Blob([orderDetails], { type: "text/plain" }), `Order_${name}_${Date.now()}.txt`);
 
   try {
-    const resp = await fetch("https://file.io/", { method: "POST", body: formData });
+    const resp = await fetch("https://api.anonymousfiles.io/", {
+      method: "POST",
+      body: form
+    });
     const json = await resp.json();
 
-    if (!json.success || !json.link) {
+    if (!json.url) {
       alert("Upload failed. Please try again.");
-      console.error("file.io error:", json);
+      console.error("AnonymousFiles error:", json);
       return;
     }
 
-    const link = json.link;
-    const whatsappNumber = "18763422293"; // ✅ Replace with your WhatsApp number
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=New%20Order:%20${encodeURIComponent(link)}`;
+    const link = json.url;
+    const whatsappNumber = "18763422293"; // Replace with your number
+    const whatsappUrl =
+      `https://wa.me/${whatsappNumber}?text=New%20Order:%20${encodeURIComponent(link)}`;
+
     window.open(whatsappUrl, "_blank");
 
     document.getElementById("payment-success").style.display = "block";
@@ -574,7 +576,7 @@ async function payOnArrival() {
 
     setTimeout(closeCheckout, 2000);
   } catch (err) {
-    alert("Upload error. Please try again later.");
+    alert("Upload error. Check console for details.");
     console.error("Upload exception:", err);
   }
 }
