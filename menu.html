@@ -9,11 +9,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   
-  <!-- Load Google API -->
-<script src="https://apis.google.com/js/api.js"></script>
-
-<!-- Load jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
     /* Style Pay Upon Arrival button */
@@ -798,6 +795,30 @@ window.onload = async () => {
   });
 }
   
+// --- Google Identity Setup ---
+let tokenClient;
+let accessToken = null;
+
+function initGoogleIdentity() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '550761116729-eipg28sfrurdbgm9dhklirriqrd6i036.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: (tokenResponse) => {
+      if (tokenResponse.error) {
+        console.error('Token error:', tokenResponse);
+        alert("❌ Failed to get access token");
+        return;
+      }
+      accessToken = tokenResponse.access_token;
+      console.log("✅ Access token received:", accessToken);
+    },
+  });
+}
+  
+  window.onload = function () {
+  initGoogleIdentity();
+};
+
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
   try {
@@ -844,10 +865,26 @@ async function payOnArrival() {
 
   // Convert PDF to Blob for upload
   const pdfBlob = doc.output("blob");
+  
+  // 🔐 Ensure we have an access token before uploading
+  if (!accessToken) {
+    await new Promise((resolve) => {
+      tokenClient.callback = (resp) => {
+        if (resp.error) {
+          alert("❌ Authorization failed");
+          throw resp;
+        }
+        accessToken = resp.access_token;
+        console.log("✅ Token received:", accessToken);
+        resolve();
+      };
+      tokenClient.requestAccessToken({ prompt: '' });
+    });
+  }
 
   try {
     // Upload PDF to Google Drive folder with name based on customer and timestamp
-    const link = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`);
+    const link = await uploadToDrive(pdfBlob, `${name}_order_${Date.now()}.pdf`, accessToken);
 
     // Open WhatsApp with the generated PDF link
     const whatsappMsg = `Hi, I just placed an order! Here's my order PDF: ${link}`;
@@ -869,20 +906,26 @@ async function payOnArrival() {
   }
 }
 
-  async function uploadToDrive(blob, filename) {
+  async function uploadToDrive(blob, filename, accessToken) {
   alert("📤 Uploading to Google Drive...");
   try {
-    const authInstance = gapi.auth2.getAuthInstance();
-    console.log("Auth instance:", authInstance);
-    if (!authInstance) throw new Error("Google Auth instance missing");
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+  method: "POST",
+  headers: new Headers({ Authorization: "Bearer " + accessToken }),
+  body: form,
+});
 
-    const user = authInstance.currentUser.get();
-    console.log("Current user:", user);
-    if (!user) throw new Error("No current user");
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+  method: "POST",
+  headers: new Headers({ Authorization: "Bearer " + accessToken }),
+  body: form,
+});
 
-    const accessToken = user.getAuthResponse().access_token;
-    console.log("Access token:", accessToken);
-    if (!accessToken) throw new Error("No access token");
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+  method: "POST",
+  headers: new Headers({ Authorization: "Bearer " + accessToken }),
+  body: form,
+});
 
     const metadata = {
       name: filename,
