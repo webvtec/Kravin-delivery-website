@@ -769,6 +769,14 @@ window.onload = async () => {
   
 // Pay on Arrival function sends order details via WhatsApp
 async function payOnArrival() {
+  try {
+    await initGoogleApi();  // Initialize Google API first
+  } catch (err) {
+    alert("Failed to initialize Google API. Please try again.");
+    console.error("Google API init failed:", err);
+    return; // Stop further execution
+  }
+
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
@@ -781,7 +789,7 @@ async function payOnArrival() {
   formError.style.display = "none";
 
   const { jsPDF } = window.jspdf;
-const doc = new jsPDF();
+  const doc = new jsPDF();
   let y = 10;
   doc.text(`Order for: ${name}`, 10, y); y += 10;
   doc.text(`Phone: ${phone}`, 10, y); y += 10;
@@ -828,6 +836,27 @@ const doc = new jsPDF();
     formError.style.display = "block";
     console.error("Upload to Drive error:", error);
   }
+}
+  
+  async function initGoogleApi() {
+  return new Promise((resolve, reject) => {
+    gapi.load('client:auth2', async () => {
+      try {
+        await gapi.client.init({
+          clientId: 'YOUR_CLIENT_ID_HERE',
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+          scope: 'https://www.googleapis.com/auth/drive.file'
+        });
+        const authInstance = gapi.auth2.getAuthInstance();
+        if (!authInstance.isSignedIn.get()) {
+          await authInstance.signIn({ prompt: 'none' });
+        }
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
 }
 
   async function uploadToDrive(blob, filename) {
