@@ -41,6 +41,7 @@
     #signupBtn:hover { background-color: #1c7430; }
     #googleSignInBtn { background-color: #db4437; color: white; }
     #googleSignInBtn:hover { background-color: #a33224; }
+    #forgotPasswordLink { color: blue; text-decoration: underline; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -49,6 +50,8 @@
 
   <input type="email" id="email" placeholder="Email" required />
   <input type="password" id="password" placeholder="Password" required />
+
+  <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
 
   <!-- Sign In and Sign Up buttons -->
   <button id="emailSignInBtn">Sign In</button>
@@ -95,15 +98,33 @@
     });
 
     // Google Sign-In
-document.getElementById("googleSignInBtn").addEventListener("click", () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
+    document.getElementById("googleSignInBtn").addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
 
-  auth.signInWithPopup(provider)
-    .then(() => {
-      window.location.href = "index.html";
-    })
-    .catch(e => alert("Google login error: " + e.message));
-});
+      auth.signInWithPopup(provider)
+        .then(() => {
+          window.location.href = "index.html";
+        })
+        .catch(e => alert("Google login error: " + e.message));
+    });
+
+    // Forget Password
+    document.getElementById("forgotPasswordLink").addEventListener("click", () => {
+      const email = document.getElementById("email").value.trim();
+
+      if (!email) {
+        alert("Please enter your email address to reset your password.");
+        return;
+      }
+
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          alert("Password reset email sent! Please check your inbox.");
+        })
+        .catch(e => {
+          alert("Error: " + e.message);
+        });
+    });
 
     // Redirect if already logged in
     auth.onAuthStateChanged(user => {
