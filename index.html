@@ -304,20 +304,48 @@ function loadMenu(restaurant) {
   fetch(url)
     .then(response => response.json())
     .then(data => {
-      const productList = document.getElementById('product-list');
-      productList.innerHTML = '';
+      const container = document.getElementById('product-list');
+      container.innerHTML = '';
 
+      // Group items by category
+      const grouped = {};
       data.forEach(item => {
-        const productDiv = document.createElement('div');
-        productDiv.className = 'product';
-        productDiv.innerHTML = `
-          <img src="${item.Image}" alt="${item.Name}">
-          <h3>${item.Name}</h3>
-          <p>${item.Price}</p>
-          <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
-        `;
-        productList.appendChild(productDiv);
+        if (!grouped[item.Category]) {
+          grouped[item.Category] = [];
+        }
+        grouped[item.Category].push(item);
       });
+
+      // Display each category
+      for (const category in grouped) {
+        // Add category header
+        const header = document.createElement('h2');
+        header.textContent = category.toUpperCase();
+        header.style.textAlign = 'center';
+        header.style.margin = '20px 0';
+        container.appendChild(header);
+
+        // Create a section for each category
+        const section = document.createElement('div');
+        section.style.display = 'grid';
+        section.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
+        section.style.gap = '16px';
+        section.style.padding = '10px';
+
+        grouped[category].forEach(item => {
+          const product = document.createElement('div');
+          product.className = 'product';
+          product.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}">
+            <h3>${item.Name}</h3>
+            <p>${item.Price}</p>
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
+          `;
+          section.appendChild(product);
+        });
+
+        container.appendChild(section);
+      }
     })
     .catch(error => {
       console.error('Error loading menu:', error);
@@ -326,7 +354,7 @@ function loadMenu(restaurant) {
 
   document.getElementById("menu-dropdown").style.display = "none";
 }
-
+  
   const firebaseConfig = {
     apiKey: "AIzaSyD5ZcQCWIMFo8u9SI-Svg5DoJESpcGz2jQ",
     authDomain: "kravin-delivery-login.firebaseapp.com",
