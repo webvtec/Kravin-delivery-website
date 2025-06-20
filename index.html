@@ -347,8 +347,8 @@ function loadMenu(restaurant) {
           productDiv.className = 'product';
           productDiv.innerHTML = `
             <img src="${item.Image}" alt="${item.Name}">
-            <h3>$${item.Name}</h3>
-            <p>${item.Price}</p>
+            <h3>${item.Name}</h3>
+            <p>$${item.Price}</p>
             <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
           `;
           grid.appendChild(productDiv);
