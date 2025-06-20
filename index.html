@@ -509,9 +509,9 @@ function updateCartUI() {
   cart.forEach(item => {
     const itemDiv = document.createElement("div");
     itemDiv.innerHTML = `
-      <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+      <img src="${item.image}" alt="$${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
       <div style="flex-grow:1;">
-        <strong>$${item.name}</strong><br/>
+        <strong>${item.name}</strong><br/>
         ${item.price} x ${item.quantity}
       </div>
       <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
