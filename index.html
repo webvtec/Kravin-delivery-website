@@ -475,20 +475,6 @@ if (category.toLowerCase() === 'chicken combos') {
     return;
   }
 
-  const existing = cart.find(i => i.name === name && i.flavor === flavor && i.secondFlavor === secondFlavor && i.piece === piece);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece, secondPiece });
-  }
-
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
-  showAddedToCartPopup();
-  document.getElementById("cart-dropdown").style.display = "block";
-}
-
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
   if (index > -1) {
