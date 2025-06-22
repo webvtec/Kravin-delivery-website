@@ -468,34 +468,6 @@ if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
   return;
 }
 
-const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece);
-if (existing) {
-  existing.quantity += 1;
-} else {
-  cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece });
-}
-
-updateCartUI();
-saveCart();
-updateFeesAndTotal();
-showAddedToCartPopup();
-document.getElementById("cart-dropdown").style.display = "block";
-
-
-  const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant });
-  }
-
-  updateCartUI();
-  saveCart();
-  updateFeesAndTotal();
-  showAddedToCartPopup();
-  document.getElementById("cart-dropdown").style.display = "block";
-}
-
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
   if (index > -1) {
