@@ -349,7 +349,7 @@ function loadMenu(restaurant) {
  let extraOptions = '';
 if (category.toLowerCase() === 'chicken combos') {
   extraOptions = `
-    <label for="flavor-${item.Name}">Select Flavor:</label>
+    <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
     <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
       <option value="Original">Original</option>
       <option value="Spicy">Spicy</option>
@@ -357,7 +357,7 @@ if (category.toLowerCase() === 'chicken combos') {
     </select>
     <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
 
-    <label for="piece-${item.Name}">Select Pieces:</label>
+    <label for="piece-${item.Name}">SELECT PIECE</label>
     <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
       <option value="Leg">Leg</option>
       <option value="Thigh">Thigh</option>
