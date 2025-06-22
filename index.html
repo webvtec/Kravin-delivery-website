@@ -343,16 +343,37 @@ function loadMenu(restaurant) {
         grid.className = 'category-grid';
 
         grouped[category].forEach(item => {
-          const productDiv = document.createElement('div');
-          productDiv.className = 'product';
-          productDiv.innerHTML = `
-            <img src="${item.Image}" alt="${item.Name}">
-            <h3>${item.Name}</h3>
-            <p>$${item.Price}</p>
-            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}')">Add to Cart</button>
-          `;
-          grid.appendChild(productDiv);
-        });
+  const productDiv = document.createElement('div');
+  productDiv.className = 'product';
+
+  let extraOptions = '';
+  if (category.toLowerCase() === 'chicken combos') {
+    extraOptions = `
+      <label for="flavor-${item.Name}">Select Flavor:</label>
+      <select id="flavor-${item.Name}" style="width: 100%; margin-bottom: 8px;">
+        <option value="Original">Original</option>
+        <option value="Spicy">Spicy</option>
+        <option value="BBQ">BBQ</option>
+      </select>
+      <label for="piece-${item.Name}">Select Pieces:</label>
+      <select id="piece-${item.Name}" style="width: 100%; margin-bottom: 8px;">
+        <option value="Leg & Thigh">Leg & Thigh</option>
+        <option value="Leg & Wing">Leg & Wing</option>
+        <option value="Breast & Wing">Breast & Wing</option>
+        <option value="Thigh & Wing">Thigh & Wing</option>
+      </select>
+    `;
+  }
+
+  productDiv.innerHTML = `
+    <img src="${item.Image}" alt="${item.Name}">
+    <h3>${item.Name}</h3>
+    <p>$${item.Price}</p>
+    ${extraOptions}
+    <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}', '${category}')">Add to Cart</button>
+  `;
+  grid.appendChild(productDiv);
+});
 
         section.appendChild(grid);
         productList.appendChild(section);
@@ -431,11 +452,35 @@ function updateFeesAndTotal() {
 
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-function addToCart(name, price, image) {
-  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-    alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
-    return;
-  }
+function addToCart(name, price, image, category) {
+  let flavor = '';
+let piece = '';
+
+if (category.toLowerCase() === 'chicken combos') {
+  const flavorSelect = document.getElementById(`flavor-${name}`);
+  const pieceSelect = document.getElementById(`piece-${name}`);
+  flavor = flavorSelect ? flavorSelect.value : '';
+  piece = pieceSelect ? pieceSelect.value : '';
+}
+
+if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+  alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
+  return;
+}
+
+const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece);
+if (existing) {
+  existing.quantity += 1;
+} else {
+  cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece });
+}
+
+updateCartUI();
+saveCart();
+updateFeesAndTotal();
+showAddedToCartPopup();
+document.getElementById("cart-dropdown").style.display = "block";
+
 
   const existing = cart.find(i => i.name === name);
   if (existing) {
@@ -507,19 +552,21 @@ function updateCartUI() {
 
   cartItemsElem.innerHTML = "";
   cart.forEach(item => {
-    const itemDiv = document.createElement("div");
-    itemDiv.innerHTML = `
-      <img src="${item.image}" alt="$${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
-      <div style="flex-grow:1;">
-        <strong>${item.name}</strong><br/>
-        ${item.price} x ${item.quantity}
-      </div>
-      <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
-      <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
-      <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
-    `;
-    cartItemsElem.appendChild(itemDiv);
-  });
+  const itemDiv = document.createElement("div");
+  itemDiv.innerHTML = `
+    <img src="${item.image}" alt="$${item.name}" style="width:50px; height:50px; object-fit:cover; margin-right:10px;" />
+    <div style="flex-grow:1;">
+      <strong>${item.name}</strong><br/>
+      ${item.flavor ? `Flavor: ${item.flavor}<br/>` : ''}
+      ${item.piece ? `Pieces: ${item.piece}<br/>` : ''}
+      ${item.price} x ${item.quantity}
+    </div>
+    <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
+    <button onclick="increaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:10px;">+</button>
+    <button class="remove-item" onclick="removeFromCart('${item.name}'); event.stopPropagation();" style="font-size:22px;">&times;</button>
+  `;
+  cartItemsElem.appendChild(itemDiv);
+});
 }
 
 function toggleCart() {
