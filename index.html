@@ -574,7 +574,6 @@ function showSecondFlavor(itemName) {
     secondFlavorDiv.innerHTML = `
       <label for="secondFlavor-${itemName}">Select Second Flavor (Optional):</label>
       <select id="secondFlavor-${itemName}" style="width: 100%; margin-bottom: 8px;">
-        <option value="">-- Select Second Flavor --</option>
         ${['Original', 'Spicy', 'BBQ'].filter(f => f !== selectedFlavor).map(f => `<option value="${f}">${f}</option>`).join('')}
       </select>
     `;
