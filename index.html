@@ -351,20 +351,19 @@ if (category.toLowerCase() === 'chicken combos') {
   extraOptions = `
     <label for="flavor-${item.Name}">Select Flavor:</label>
     <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-      <option value="">-- Select Flavor --</option>
       <option value="Original">Original</option>
       <option value="Spicy">Spicy</option>
+      <option value="Mild">Mild</option>
       <option value="BBQ">BBQ</option>
     </select>
     <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
 
     <label for="piece-${item.Name}">Select Pieces:</label>
     <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-      <option value="">-- Select Pieces --</option>
-      <option value="Leg & Thigh">Leg & Thigh</option>
-      <option value="Leg & Wing">Leg & Wing</option>
-      <option value="Breast & Wing">Breast & Wing</option>
-      <option value="Thigh & Wing">Thigh & Wing</option>
+      <option value="Leg">Leg</option>
+      <option value="Thigh">Thigh</option>
+      <option value="Breast">Breast</option>
+      <option value="Wing">Wing</option>
     </select>
     <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
   `;
