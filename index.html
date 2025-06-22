@@ -351,13 +351,13 @@ function loadMenu(restaurant) {
   extraOptions = `
     <label for="piece-${item.Name}">Select Pieces:</label>
 <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+  <option value="">-- Select Pieces --</option>
   <option value="Leg & Thigh">Leg & Thigh</option>
   <option value="Leg & Wing">Leg & Wing</option>
   <option value="Breast & Wing">Breast & Wing</option>
   <option value="Thigh & Wing">Thigh & Wing</option>
 </select>
 <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
-    <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
     <label for="piece-${item.Name}">Select Pieces:</label>
     <select id="piece-${item.Name}" style="width: 100%; margin-bottom: 8px;">
       <option value="Leg & Thigh">Leg & Thigh</option>
@@ -457,17 +457,18 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
 
  function addToCart(name, price, image, category) {
   let flavor = '';
-  let secondFlavor = '';
-  let piece = '';
+let piece = '';
+let secondPiece = '';
 
-  if (category.toLowerCase() === 'chicken combos') {
-    const flavorSelect = document.getElementById(`flavor-${name}`);
-    const secondFlavorSelect = document.getElementById(`secondFlavor-${name}`);
-    const pieceSelect = document.getElementById(`piece-${name}`);
-    flavor = flavorSelect ? flavorSelect.value : '';
-    secondFlavor = secondFlavorSelect ? secondFlavorSelect.value : '';
-    piece = pieceSelect ? pieceSelect.value : '';
-  }
+if (category.toLowerCase() === 'chicken combos') {
+  const flavorSelect = document.getElementById(`flavor-${name}`);
+  const pieceSelect = document.getElementById(`piece-${name}`);
+  const secondPieceSelect = document.getElementById(`secondPiece-${name}`);
+
+  flavor = flavorSelect ? flavorSelect.value : '';
+  piece = pieceSelect ? pieceSelect.value : '';
+  secondPiece = secondPieceSelect ? secondPieceSelect.value : '';
+}
 
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
     alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
@@ -478,7 +479,7 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
   if (existing) {
     existing.quantity += 1;
   } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, secondFlavor, piece });
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece, secondPiece });
   }
 
   updateCartUI();
@@ -550,7 +551,7 @@ function updateCartUI() {
       <div style="flex-grow:1;">
         <strong>${item.name}</strong><br/>
         ${item.flavor ? `Flavor: ${item.flavor}${item.secondFlavor ? ' & ' + item.secondFlavor : ''}<br/>` : ''}
-        ${item.piece ? `Pieces: ${item.piece}<br/>` : ''}
+        ${item.piece ? `Pieces: ${item.piece}${item.secondPiece ? ' & ' + item.secondPiece : ''}<br/>` : ''}
         ${item.price} x ${item.quantity}
       </div>
       <button onclick="decreaseQuantity('${item.name}'); event.stopPropagation();" style="width:28px; height:28px; font-size:20px; margin-right:5px;">−</button>
@@ -596,7 +597,7 @@ function showSecondFlavor(itemName) {
     `;
   }
 }
-
+  
 function toggleCart() {
   const dropdown = document.getElementById("cart-dropdown");
   dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
