@@ -715,8 +715,24 @@ function payOnArrival() {
   let orderDetails = `NEW KRAVIN DELIVERY ORDER - PAY UPON ARRIVAL\n\nRestaurant: ${currentRestaurant}\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nORDER DETAILS:\n`;
 
   cart.forEach(item => {
-    orderDetails += `- ${item.name} x${item.quantity} (${item.price})\n`;
-  });
+  let flavorText = '';
+  if (item.flavor) {
+    flavorText += `Flavor: ${item.flavor}`;
+    if (item.secondFlavor) {
+      flavorText += ` & ${item.secondFlavor}`;
+    }
+  }
+
+  let pieceText = '';
+  if (item.piece) {
+    pieceText += `Pieces: ${item.piece}`;
+    if (item.secondPiece) {
+      pieceText += ` & ${item.secondPiece}`;
+    }
+  }
+
+  orderDetails += `- ${item.name} x${item.quantity} (${item.price}) ${flavorText ? ' | ' + flavorText : ''}${pieceText ? ' | ' + pieceText : ''}\n`;
+});
 
   const deliveryFee = calculateDeliveryFee();
   const cartTotal = calculateCartTotal();
