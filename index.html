@@ -457,23 +457,37 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
 
  function addToCart(name, price, image, category) {
   let flavor = '';
-let piece = '';
-let secondPiece = '';
+  let piece = '';
+  let secondPiece = '';
 
-if (category.toLowerCase() === 'chicken combos') {
-  const flavorSelect = document.getElementById(`flavor-${name}`);
-  const pieceSelect = document.getElementById(`piece-${name}`);
-  const secondPieceSelect = document.getElementById(`secondPiece-${name}`);
+  if (category.toLowerCase() === 'chicken combos') {
+    const flavorSelect = document.getElementById(`flavor-${name}`);
+    const pieceSelect = document.getElementById(`piece-${name}`);
+    const secondPieceSelect = document.getElementById(`secondPiece-${name}`);
 
-  flavor = flavorSelect ? flavorSelect.value : '';
-  piece = pieceSelect ? pieceSelect.value : '';
-  secondPiece = secondPieceSelect ? secondPieceSelect.value : '';
-}
+    flavor = flavorSelect ? flavorSelect.value : '';
+    piece = pieceSelect ? pieceSelect.value : '';
+    secondPiece = secondPieceSelect ? secondPieceSelect.value : '';
+  }
 
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
     alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
     return;
   }
+
+  const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece && i.secondPiece === secondPiece);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece, secondPiece });
+  }
+
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
+  showAddedToCartPopup();
+  document.getElementById("cart-dropdown").style.display = "block";
+ }
 
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
