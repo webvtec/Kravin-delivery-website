@@ -349,13 +349,15 @@ function loadMenu(restaurant) {
   let extraOptions = '';
   if (category.toLowerCase() === 'chicken combos') {
   extraOptions = `
-    <label for="flavor-${item.Name}">Select Flavor:</label>
-    <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-      <option value="">-- Select Flavor --</option>
-      <option value="Original">Original</option>
-      <option value="Spicy">Spicy</option>
-      <option value="BBQ">BBQ</option>
-    </select>
+    <label for="piece-${item.Name}">Select Pieces:</label>
+<select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+  <option value="">-- Select Pieces --</option>
+  <option value="Leg & Thigh">Leg & Thigh</option>
+  <option value="Leg & Wing">Leg & Wing</option>
+  <option value="Breast & Wing">Breast & Wing</option>
+  <option value="Thigh & Wing">Thigh & Wing</option>
+</select>
+<div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
     <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
     <label for="piece-${item.Name}">Select Pieces:</label>
     <select id="piece-${item.Name}" style="width: 100%; margin-bottom: 8px;">
@@ -454,7 +456,7 @@ function updateFeesAndTotal() {
 
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
-function addToCart(name, price, image, category) {
+ function addToCart(name, price, image, category) {
   let flavor = '';
   let secondFlavor = '';
   let piece = '';
@@ -559,8 +561,8 @@ function updateCartUI() {
     cartItemsElem.appendChild(itemDiv);
   });
 }
-  
-  function showSecondFlavor(itemName) {
+
+function showSecondFlavor(itemName) {
   const firstSelect = document.getElementById(`flavor-${itemName}`);
   const selectedFlavor = firstSelect.value;
 
@@ -573,6 +575,24 @@ function updateCartUI() {
       <select id="secondFlavor-${itemName}" style="width: 100%; margin-bottom: 8px;">
         <option value="">-- Select Second Flavor --</option>
         ${['Original', 'Spicy', 'BBQ'].filter(f => f !== selectedFlavor).map(f => `<option value="${f}">${f}</option>`).join('')}
+      </select>
+    `;
+  }
+}
+  
+  function showSecondPiece(itemName) {
+  const firstPieceSelect = document.getElementById(`piece-${itemName}`);
+  const selectedPiece = firstPieceSelect.value;
+
+  if (selectedPiece) {
+    const secondPieceDiv = document.getElementById(`second-piece-${itemName}`);
+    secondPieceDiv.style.display = 'block';
+
+    secondPieceDiv.innerHTML = `
+      <label for="secondPiece-${itemName}">Select Second Pieces (Optional):</label>
+      <select id="secondPiece-${itemName}" style="width: 100%; margin-bottom: 8px;">
+        <option value="">-- Select Second Pieces --</option>
+        ${['Leg & Thigh', 'Leg & Wing', 'Breast & Wing', 'Thigh & Wing'].filter(p => p !== selectedPiece).map(p => `<option value="${p}">${p}</option>`).join('')}
       </select>
     `;
   }
