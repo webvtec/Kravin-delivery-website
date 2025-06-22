@@ -571,7 +571,7 @@ function showSecondFlavor(itemName) {
     secondFlavorDiv.style.display = 'block';
 
     secondFlavorDiv.innerHTML = `
-      <label for="secondFlavor-${itemName}">Select Second Flavor (Optional):</label>
+      <label for="secondFlavor-${itemName}">SELECT SECOND FLAVOUR</label>
       <select id="secondFlavor-${itemName}" style="width: 100%; margin-bottom: 8px;">
         ${['Original', 'Spicy', 'BBQ'].filter(f => f !== selectedFlavor).map(f => `<option value="${f}">${f}</option>`).join('')}
       </select>
@@ -588,7 +588,7 @@ function showSecondFlavor(itemName) {
     secondPieceDiv.style.display = 'block';
 
     secondPieceDiv.innerHTML = `
-      <label for="secondPiece-${itemName}">Select Second Pieces (Optional):</label>
+      <label for="secondPiece-${itemName}">SELECT SECOND PIECE</label>
       <select id="secondPiece-${itemName}" style="width: 100%; margin-bottom: 8px;">
         ${['Leg', 'Thigh', 'Breast', 'Wing'].filter(p => p !== selectedPiece).map(p => `<option value="${p}">${p}</option>`).join('')}
       </select>
