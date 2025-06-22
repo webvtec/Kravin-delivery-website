@@ -454,18 +454,32 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
 
 function addToCart(name, price, image, category) {
   let flavor = '';
-let piece = '';
+  let piece = '';
 
-if (category.toLowerCase() === 'chicken combos') {
-  const flavorSelect = document.getElementById(`flavor-${name}`);
-  const pieceSelect = document.getElementById(`piece-${name}`);
-  flavor = flavorSelect ? flavorSelect.value : '';
-  piece = pieceSelect ? pieceSelect.value : '';
-}
+  if (category.toLowerCase() === 'chicken combos') {
+    const flavorSelect = document.getElementById(`flavor-${name}`);
+    const pieceSelect = document.getElementById(`piece-${name}`);
+    flavor = flavorSelect ? flavorSelect.value : '';
+    piece = pieceSelect ? pieceSelect.value : '';
+  }
 
-if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
-  alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
-  return;
+  if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
+    alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
+    return;
+  }
+
+  const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece });
+  }
+
+  updateCartUI();
+  saveCart();
+  updateFeesAndTotal();
+  showAddedToCartPopup();
+  document.getElementById("cart-dropdown").style.display = "block";
 }
 
 function removeFromCart(name) {
