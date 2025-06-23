@@ -343,40 +343,52 @@ function loadMenu(restaurant) {
         grid.className = 'category-grid';
 
         grouped[category].forEach(item => {
-  const productDiv = document.createElement('div');
-  productDiv.className = 'product';
+          const productDiv = document.createElement('div');
+          productDiv.className = 'product';
 
- let extraOptions = '';
-if (category.toLowerCase() === 'chicken combos') {
-  extraOptions = `
-    <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
-    <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-      <option value="Original">Original</option>
-      <option value="Spicy">Spicy</option>
-      <option value="BBQ">BBQ</option>
-    </select>
-    <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
+          let extraOptions = '';
 
-    <label for="piece-${item.Name}">SELECT PIECE</label>
-    <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-      <option value="Leg">Leg</option>
-      <option value="Thigh">Thigh</option>
-      <option value="Breast">Breast</option>
-      <option value="Wing">Wing</option>
-    </select>
-    <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
-  `;
-}
+          // Chicken Combos - Single Selection
+          if (category.toLowerCase() === 'chicken combos') {
+            extraOptions = `
+              <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
+              <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+                <option value="Original">Original</option>
+                <option value="Spicy">Spicy</option>
+                <option value="BBQ">BBQ</option>
+              </select>
+              <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
 
-  productDiv.innerHTML = `
-    <img src="${item.Image}" alt="${item.Name}">
-    <h3>${item.Name}</h3>
-    <p>$${item.Price}</p>
-    ${extraOptions}
-    <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}', '${category}')">Add to Cart</button>
-  `;
-  grid.appendChild(productDiv);
-});
+              <label for="piece-${item.Name}">SELECT PIECE</label>
+              <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+                <option value="Leg">Leg</option>
+                <option value="Thigh">Thigh</option>
+                <option value="Breast">Breast</option>
+                <option value="Wing">Wing</option>
+              </select>
+              <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
+            `;
+          }
+          // Buckets & Big Six - Multi Selection
+          else if (['buckets', 'big six'].includes(category.toLowerCase())) {
+            extraOptions = `
+              <label>Select Flavours:</label><br/>
+              <label><input type="checkbox" name="flavor-${item.Name}" value="Original"> Original</label><br/>
+              <label><input type="checkbox" name="flavor-${item.Name}" value="Hot & Spicy"> Hot & Spicy</label><br/>
+              <label><input type="checkbox" name="flavor-${item.Name}" value="BBQ"> BBQ</label><br/>
+              <br/>
+            `;
+          }
+
+          productDiv.innerHTML = `
+            <img src="${item.Image}" alt="${item.Name}">
+            <h3>${item.Name}</h3>
+            <p>$${item.Price}</p>
+            ${extraOptions}
+            <button onclick="addToCart('${item.Name}', '${item.Price}', '${item.Image}', '${category}')">Add to Cart</button>
+          `;
+          grid.appendChild(productDiv);
+        });
 
         section.appendChild(grid);
         productList.appendChild(section);
@@ -460,6 +472,7 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
   let piece = '';
   let secondPiece = '';
 
+  // Chicken Combos: Keep existing behavior
   if (category.toLowerCase() === 'chicken combos') {
     const flavorSelect = document.getElementById(`flavor-${name}`);
     const pieceSelect = document.getElementById(`piece-${name}`);
@@ -469,12 +482,21 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
     piece = pieceSelect ? pieceSelect.value : '';
     secondPiece = secondPieceSelect ? secondPieceSelect.value : '';
   }
+  // Buckets & Big Six: Multi-flavor selection
+  else if (category.toLowerCase() === 'buckets' || category.toLowerCase() === 'big six') {
+    let selectedFlavors = [];
+    const checkboxes = document.querySelectorAll(`input[name="flavor-${name}"]:checked`);
+    checkboxes.forEach(cb => selectedFlavors.push(cb.value));
+    flavor = selectedFlavors.join(', ');
+  }
 
+  // Enforce one-restaurant rule
   if (cart.length > 0 && cart[0].restaurant !== currentRestaurant) {
     alert("YOU CAN ONLY ORDER FROM ONE RESTAURANT AT A TIME");
     return;
   }
 
+  // Check if item with same options exists in cart
   const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece && i.secondPiece === secondPiece);
   if (existing) {
     existing.quantity += 1;
@@ -487,7 +509,7 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
   updateFeesAndTotal();
   showAddedToCartPopup();
   document.getElementById("cart-dropdown").style.display = "block";
- }
+}
 
 function removeFromCart(name) {
   const index = cart.findIndex(i => i.name === name);
