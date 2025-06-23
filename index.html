@@ -79,6 +79,17 @@
   gap: 16px;
   padding: 10px;
 }
+
+    .flavor-options {
+  text-align: left;
+  margin-top: 8px;
+}
+
+.flavor-options label {
+  display: block;
+  margin-bottom: 5px;
+}
+
     .product {
       background: white; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       text-align: center; border-radius: 8px;
@@ -350,35 +361,36 @@ function loadMenu(restaurant) {
 
           // Chicken Combos - Single Selection
           if (category.toLowerCase() === 'chicken combos') {
-            extraOptions = `
-              <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
-              <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-                <option value="Original">Original</option>
-                <option value="Spicy">Spicy</option>
-                <option value="BBQ">BBQ</option>
-              </select>
-              <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
+  extraOptions = `
+    <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
+    <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+      <option value="Original">Original</option>
+      <option value="Spicy">Spicy</option>
+      <option value="BBQ">BBQ</option>
+    </select>
+    <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
 
-              <label for="piece-${item.Name}">SELECT PIECE</label>
-              <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
-                <option value="Leg">Leg</option>
-                <option value="Thigh">Thigh</option>
-                <option value="Breast">Breast</option>
-                <option value="Wing">Wing</option>
-              </select>
-              <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
-            `;
-          }
-          // Buckets & Big Six - Multi Selection
-          else if (['buckets', 'big six'].includes(category.toLowerCase())) {
-            extraOptions = `
-              <label>Select Flavours:</label><br/>
-              <label><input type="checkbox" name="flavor-${item.Name}" value="Original"> Original</label><br/>
-              <label><input type="checkbox" name="flavor-${item.Name}" value="Hot & Spicy"> Hot & Spicy</label><br/>
-              <label><input type="checkbox" name="flavor-${item.Name}" value="BBQ"> BBQ</label><br/>
-              <br/>
-            `;
-          }
+    <label for="piece-${item.Name}">SELECT PIECE</label>
+    <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
+      <option value="Leg">Leg</option>
+      <option value="Thigh">Thigh</option>
+      <option value="Breast">Breast</option>
+      <option value="Wing">Wing</option>
+    </select>
+    <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
+  `;
+}
+// Buckets & Big Six - Multi Selection
+else if (['buckets', 'big six'].includes(category.toLowerCase())) {
+  extraOptions = `
+    <div class="flavor-options">
+      <label>Select Flavours:</label>
+      <label><input type="checkbox" name="flavor-${item.Name}" value="Original"> Original</label>
+      <label><input type="checkbox" name="flavor-${item.Name}" value="Hot & Spicy"> Hot & Spicy</label>
+      <label><input type="checkbox" name="flavor-${item.Name}" value="BBQ"> BBQ</label>
+    </div>
+  `;
+}
 
           productDiv.innerHTML = `
             <img src="${item.Image}" alt="${item.Name}">
