@@ -438,6 +438,7 @@ function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
 
   if (address.includes("brompton")) return 1000;
+  if (address.includes("brampton")) return 1000;
   if (address.includes("black river")) return 500;
   if (address.includes("speculation")) return 1000;
   if (address.includes("luana")) return 800;
