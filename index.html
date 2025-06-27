@@ -437,40 +437,46 @@ else if (['buckets', 'big six'].includes(category.toLowerCase())) {
 function calculateDeliveryFee() {
   const address = document.getElementById("address").value.trim().toLowerCase();
 
-  // Step 1: Calculate total quantity excluding "Sides"
   const totalNonSideItems = cart.reduce((sum, item) => {
     return item.category?.toLowerCase() !== "sides" ? sum + item.quantity : sum;
   }, 0);
 
-  // Step 2: Determine base delivery fee by location
+  // Map of delivery zones: base fee + extra fee (for 4+ non-side items)
+  const deliveryZones = {
+    "brompton":      { base: 1000, extra: 500 },
+    "brampton":      { base: 1000, extra: 500 },
+    "black river":   { base: 500,  extra: 500 },
+    "speculation":   { base: 1000, extra: 500 },
+    "luana":         { base: 800,  extra: 400 },
+    "crawford":      { base: 1200, extra: 600 },
+    "shrewsbury":    { base: 1500, extra: 750 },
+    "cambridge":     { base: 1000, extra: 500 },
+    "fyffes pen":    { base: 1200, extra: 600 },
+    "oxford":        { base: 1000, extra: 500 },
+    "lewis town":    { base: 1000, extra: 500 },
+    "sandy ground":  { base: 1000, extra: 500 },
+    "hodges":        { base: 700,  extra: 350 },
+    "crane road":    { base: 700,  extra: 350 },
+    "darlingtober":  { base: 1300, extra: 650 },
+    "whitehouse":    { base: 1500, extra: 750 },
+    "border":        { base: 1500, extra: 750 },
+    "cotterwood":    { base: 1200, extra: 600 }
+  };
+
   let baseFee = 0;
+  let extraFee = 0;
 
-  if (address.includes("brompton") || address.includes("brampton")) baseFee = 1000;
-  else if (address.includes("black river")) baseFee = 500;
-  else if (address.includes("speculation")) baseFee = 1000;
-  else if (address.includes("luana")) baseFee = 800;
-  else if (address.includes("crawford")) baseFee = 1200;
-  else if (address.includes("shrewsbury")) baseFee = 1500;
-  else if (address.includes("cambridge")) baseFee = 1000;
-  else if (address.includes("fyffes pen")) baseFee = 1200;
-  else if (address.includes("oxford")) baseFee = 1000;
-  else if (address.includes("lewis town")) baseFee = 1000;
-  else if (address.includes("sandy ground")) baseFee = 1000;
-  else if (address.includes("hodges")) baseFee = 700;
-  else if (address.includes("crane road")) baseFee = 700;
-  else if (address.includes("darlingtober")) baseFee = 1300;
-  else if (address.includes("whitehouse") || address.includes("border")) baseFee = 1500;
-  else if (address.includes("cotterwood")) baseFee = 1200;
-
-  // Step 3: Add extra fee if 4+ non-side items
-  let extraCharge = 0;
-  if (totalNonSideItems >= 4) {
-    if (baseFee >= 1000) extraCharge = 300;
-    else if (baseFee >= 800) extraCharge = 200;
-    else if (baseFee > 0) extraCharge = 100;
+  for (const zone in deliveryZones) {
+    if (address.includes(zone)) {
+      baseFee = deliveryZones[zone].base;
+      if (totalNonSideItems >= 4) {
+        extraFee = deliveryZones[zone].extra;
+      }
+      break;
+    }
   }
 
-  return baseFee + extraCharge;
+  return baseFee + extraFee;
 }
 
 function calculateCartTotal() {
