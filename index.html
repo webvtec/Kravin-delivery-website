@@ -533,11 +533,28 @@ document.getElementById("address").addEventListener("input", updateFeesAndTotal)
   }
 
   // Check if item with same options exists in cart
-  const existing = cart.find(i => i.name === name && i.flavor === flavor && i.piece === piece && i.secondPiece === secondPiece);
+  const existing = cart.find(i =>
+    i.name === name &&
+    i.flavor === flavor &&
+    i.piece === piece &&
+    i.secondPiece === secondPiece &&
+    i.category === category
+  );
+
   if (existing) {
     existing.quantity += 1;
   } else {
-    cart.push({ name, price, image, quantity: 1, restaurant: currentRestaurant, flavor, piece, secondPiece });
+    cart.push({
+      name,
+      price,
+      image,
+      quantity: 1,
+      restaurant: currentRestaurant,
+      category, // ✅ include category for delivery fee logic
+      flavor,
+      piece,
+      secondPiece
+    });
   }
 
   updateCartUI();
