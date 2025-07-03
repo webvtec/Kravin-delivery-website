@@ -692,6 +692,14 @@ function loadCart() {
   const savedCart = localStorage.getItem('kravinCart');
   if (savedCart) {
     cart = JSON.parse(savedCart);
+
+    // ✅ Patch missing categories for backwards compatibility
+    cart.forEach(item => {
+      if (!item.category) {
+        item.category = "unknown"; // You can also use "sides" as a safe fallback
+      }
+    });
+
     updateCartUI();
     updateFeesAndTotal();
   }
