@@ -360,34 +360,27 @@ function loadMenu(restaurant) {
           let extraOptions = '';
 
           // Chicken Combos - Single Selection
-if (category.toLowerCase() === 'chicken combos') {
+          if (category.toLowerCase() === 'chicken combos') {
   extraOptions = `
     <label for="flavor-${item.Name}">SELECT FLAVOUR</label>
-    <select id="flavor-${item.Name}" style="width: 100%; margin-bottom: 8px;">
+    <select id="flavor-${item.Name}" onchange="showSecondFlavor('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
       <option value="Original">Original</option>
       <option value="Spicy">Spicy</option>
       <option value="BBQ">BBQ</option>
     </select>
+    <div id="second-flavor-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
 
     <label for="piece-${item.Name}">SELECT PIECE</label>
-    <select id="piece-${item.Name}" style="width: 100%; margin-bottom: 8px;">
+    <select id="piece-${item.Name}" onchange="showSecondPiece('${item.Name}')" style="width: 100%; margin-bottom: 8px;">
       <option value="Leg">Leg</option>
       <option value="Thigh">Thigh</option>
       <option value="Breast">Breast</option>
       <option value="Wing">Wing</option>
       <option value="Rib">Rib</option>
     </select>
-
-    <label for="second-piece-${item.Name}">SELECT SECOND PIECE</label>
-    <select id="second-piece-${item.Name}" style="width: 100%; margin-bottom: 8px;">
-      <option value="Leg">Leg</option>
-      <option value="Thigh">Thigh</option>
-      <option value="Breast">Breast</option>
-      <option value="Wing">Wing</option>
-      <option value="Rib">Rib</option>
-    </select>
+    <div id="second-piece-${item.Name}" style="display:none; margin-bottom: 8px;"></div>
   `;
-}
+          }
 
 // Buckets & Big Six - Multi Selection
 else if (['buckets', 'big six'].includes(category.toLowerCase())) {
