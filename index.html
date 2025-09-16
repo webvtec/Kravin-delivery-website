@@ -488,14 +488,13 @@ function calculateDeliveryFee() {
     "paradise":      { base: 1000, extra: 500 }
 };
 
-  const nightDeliveryZones = ["brompton", "brampton", "crane road", "black river", "black river hospital"];
+  const nightDeliveryZones = ["brompton", "crane road", "black river", "black river hospital"];
   const nightDeliveryExtra = {
-    "brompton": 500,
-    "brampton": 500, 
-    "crane road": 500,
-    "black river": 300,
-    "black river hospital": 0
-  };
+  "brompton": 500,
+  "crane road": 500,
+  "black river": 300,
+  "black river hospital": 0
+};
 
   let baseFee = 0;
   let extraFee = 0;
@@ -852,18 +851,18 @@ function payOnArrival() {
   }
 
   // Add night delivery check
-  if (isNightDelivery()) {
-    const addressLower = address.toLowerCase();
-    const nightZones = ["brompton", "brampton", "crane road", "black river", "black river hospital"];
-    const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
-    
-    if (!isValidNightZone) {
-      const fe = document.getElementById("form-error");
-      fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (+$500)<br/>• Brampton (+$500)<br/>• Crane Road (+$500)<br/>• Black River (+$300)<br/>• Black River Hospital ($500)";
-      fe.style.display = "block";
-      return;
-    }
+if (isNightDelivery()) {
+  const addressLower = address.toLowerCase();
+  const nightZones = ["brompton", "crane road", "black river", "black river hospital"];
+  const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
+  
+  if (!isValidNightZone) {
+    const fe = document.getElementById("form-error");
+    fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (+$500)<br/>• Crane Road (+$500)<br/>• Black River (+$300)<br/>• Black River Hospital ($500)";
+    fe.style.display = "block";
+    return;
   }
+}
 
   document.getElementById("form-error").style.display = "none";
 
@@ -979,12 +978,10 @@ function closeAreaSelection() {
 }
 
 function showSavannaLaMarCheckout() {
-  // Update address label to show Savanna La Mar locations
-  const addressLabel = document.querySelector('#checkout-modal label[for="address"]');
-  addressLabel.innerHTML = 'Address (Savanna La Mar Areas: Dunn Bar, George Street, Paradise):';
-  
+  // Don't change the address label - keep it as just "Address:"
   document.getElementById("checkout-modal").style.display = "flex";
 }
+  
 </script>
 
 </body>
