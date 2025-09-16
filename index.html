@@ -281,6 +281,17 @@
     </div>
   </div>
 
+
+
+  <div id="area-selection-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1200; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+    <h2 style="margin-bottom: 20px; color: red;">SELECT DELIVERY AREA</h2>
+    <button onclick="selectArea('black-river')" style="display: block; width: 100%; padding: 12px; margin: 10px 0; background-color: red; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">BLACK RIVER AREA</button>
+    <button onclick="selectArea('savanna-la-mar')" style="display: block; width: 100%; padding: 12px; margin: 10px 0; background-color: red; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">SAVANNA LA MAR AREA</button>
+    <button onclick="closeAreaSelection()" style="display: block; width: 100%; padding: 8px; margin: 15px 0 0 0; background-color: #ccc; color: black; border: none; border-radius: 5px; cursor: pointer;">Cancel</button>
+  </div>
+  </div>
+
 <script>
 const phoneInput = document.getElementById("phone");
 const errorMessage = document.getElementById("error-message");
@@ -448,6 +459,7 @@ function calculateDeliveryFee() {
     "brompton":      { base: 1000, extra: 500 },
     "brampton":      { base: 1000, extra: 500 },
     "black river":   { base: 500,  extra: 250 },
+    "black river hospital":   { base: 500,  extra: 250 },
     "speculation":   { base: 1000, extra: 500 },
     "luana":         { base: 1000,  extra: 500 },
     "crawford":      { base: 1200, extra: 600 },
@@ -465,23 +477,48 @@ function calculateDeliveryFee() {
     "cotterwood":    { base: 1500, extra: 750 },
     "Sellington":   { base: 1500, extra: 750 },
     "grove":   { base: 2500, extra: 1000 },
-    "middle quaters":{ base: 2000, extra: 1000 }
+    "middle quaters":{ base: 2000, extra: 1000 },
+
+
+
+
+    // New Savanna La Mar areas
+    "dunn bar":      { base: 800,  extra: 400 },
+    "george street": { base: 600,  extra: 300 },
+    "paradise":      { base: 1000, extra: 500 }
 };
+
+  const nightDeliveryZones = ["brompton", "brampton", "crane road", "black river", "black river hospital"];
+  const nightDeliveryExtra = {
+    "brompton": 500,
+    "brampton": 500, 
+    "crane road": 500,
+    "black river": 300,
+    "black river hospital": 0
+  };
 
   let baseFee = 0;
   let extraFee = 0;
+  let nightFee = 0;
+  let matchedZone = "";
 
   for (const zone in deliveryZones) {
     if (address.includes(zone)) {
       baseFee = deliveryZones[zone].base;
+      matchedZone = zone;
       if (totalNonSideItems >= 4) {
         extraFee = deliveryZones[zone].extra;
+      }
+      
+      // Add night delivery fee if applicable
+      if (isNightDelivery() && nightDeliveryZones.includes(zone)) {
+        nightFee = nightDeliveryExtra[zone];
       }
       break;
     }
   }
 
-  return baseFee + extraFee;
+  return baseFee + extraFee + nightFee;
 }
 
 function calculateCartTotal() {
@@ -507,6 +544,12 @@ function updateFeesAndTotal() {
 document.getElementById("address").addEventListener("input", updateFeesAndTotal);
 
  function addToCart(name, price, image, category) {
+  // Check if within opening hours
+  if (!isWithinOpeningHours()) {
+    showClosedPopup();
+    return;
+  }
+
   let flavor = '';
   let piece = '';
   let secondPiece = '';
@@ -675,6 +718,11 @@ function showSecondFlavor(itemName) {
 }
   
 function toggleCart() {
+  if (!isWithinOpeningHours()) {
+    showClosedPopup();
+    return;
+  }
+  
   const dropdown = document.getElementById("cart-dropdown");
   dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
 }
@@ -717,7 +765,13 @@ function openCheckout() {
   document.getElementById("form-error").style.display = "none";
   document.getElementById("payment-success").style.display = "none";
   document.getElementById("checkout-form").style.display = "block";
-  document.getElementById("checkout-modal").style.display = "flex";
+  
+  // Reset address label to default
+  const addressLabel = document.querySelector('#checkout-modal label[for="address"]');
+  addressLabel.innerHTML = 'Address:';
+  
+  // Show area selection modal instead of direct checkout
+  document.getElementById("area-selection-modal").style.display = "flex";
 }
 
 function closeCheckout() {
@@ -796,6 +850,21 @@ function payOnArrival() {
     fe.style.display = "block";
     return;
   }
+
+  // Add night delivery check
+  if (isNightDelivery()) {
+    const addressLower = address.toLowerCase();
+    const nightZones = ["brompton", "brampton", "crane road", "black river", "black river hospital"];
+    const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
+    
+    if (!isValidNightZone) {
+      const fe = document.getElementById("form-error");
+      fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (+$500)<br/>• Brampton (+$500)<br/>• Crane Road (+$500)<br/>• Black River (+$300)<br/>• Black River Hospital ($500)";
+      fe.style.display = "block";
+      return;
+    }
+  }
+
   document.getElementById("form-error").style.display = "none";
 
   let orderDetails = `NEW KRAVIN DELIVERY ORDER - PAY UPON ARRIVAL\n\nRestaurant: ${currentRestaurant}\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\n\nORDER DETAILS:\n`;
@@ -843,7 +912,79 @@ function payOnArrival() {
 
   setTimeout(closeCheckout, 2000);
 }
+
+
+  // Add these after the existing global variables (after let cart = [];)
+function getCurrentTime() {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  return hours + (minutes / 60);
+}
+
+function isWithinOpeningHours() {
+  const currentTime = getCurrentTime();
+  const openTime = 10.5; // 10:30 AM
+  const closeTime = 23; // 11:00 PM
+  return currentTime >= openTime && currentTime <= closeTime;
+}
+
+function isNightDelivery() {
+  const currentTime = getCurrentTime();
+  return currentTime >= 20; // After 8 PM
+}
+
+function showClosedPopup() {
+  let popup = document.getElementById("closed-popup");
+  if (!popup) {
+    popup = document.createElement("div");
+    popup.id = "closed-popup";
+    popup.textContent = "PLEASE ORDER WITHIN OPENING HOURS.";
+    popup.style.position = "fixed";
+    popup.style.bottom = "20px";
+    popup.style.right = "20px";
+    popup.style.backgroundColor = "#dc3545";
+    popup.style.color = "#fff";
+    popup.style.padding = "12px 20px";
+    popup.style.borderRadius = "8px";
+    popup.style.fontWeight = "bold";
+    popup.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+    popup.style.zIndex = "9999";
+    document.body.appendChild(popup);
+  }
+
+  popup.style.opacity = "1";
+  popup.style.transition = "opacity 0.5s";
+
+  setTimeout(() => {
+    popup.style.opacity = "0";
+  }, 3000);
+}
+
+
+function selectArea(area) {
+  document.getElementById("area-selection-modal").style.display = "none";
   
+  if (area === 'black-river') {
+    // Continue with existing checkout flow
+    document.getElementById("checkout-modal").style.display = "flex";
+  } else if (area === 'savanna-la-mar') {
+    // Show Savanna La Mar specific checkout
+    showSavannaLaMarCheckout();
+  }
+}
+
+function closeAreaSelection() {
+  document.getElementById("area-selection-modal").style.display = "none";
+}
+
+function showSavannaLaMarCheckout() {
+  // Update address label to show Savanna La Mar locations
+  const addressLabel = document.querySelector('#checkout-modal label[for="address"]');
+  addressLabel.innerHTML = 'Address (Savanna La Mar Areas: Dunn Bar, George Street, Paradise):';
+  
+  document.getElementById("checkout-modal").style.display = "flex";
+}
 </script>
 
 </body>
