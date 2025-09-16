@@ -488,12 +488,15 @@ function calculateDeliveryFee() {
     "paradise":      { base: 1000, extra: 500 }
 };
 
-  const nightDeliveryZones = ["brompton", "crane road", "black river", "black river hospital"];
-  const nightDeliveryExtra = {
+const nightDeliveryZones = ["brompton", "crane road", "black river", "black river hospital", "dunn bar", "george street", "paradise"];
+const nightDeliveryExtra = {
   "brompton": 500,
   "crane road": 500,
   "black river": 300,
-  "black river hospital": 0
+  "black river hospital": 0,
+  "dunn bar": 400,
+  "george street": 300,
+  "paradise": 500
 };
 
   let baseFee = 0;
@@ -839,6 +842,7 @@ function logout() {
 }
 
 function payOnArrival() {
+function payOnArrival() {
   const name = document.getElementById("name").value.trim();
   const phone = document.getElementById("phone").value.trim();
   const address = document.getElementById("address").value.trim();
@@ -850,19 +854,29 @@ function payOnArrival() {
     return;
   }
 
-  // Add night delivery check
-if (isNightDelivery()) {
-  const addressLower = address.toLowerCase();
-  const nightZones = ["brompton", "crane road", "black river", "black river hospital"];
-  const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
-  
-  if (!isValidNightZone) {
-  const fe = document.getElementById("form-error");
-  fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (for extra $500)<br/>• Crane Road (for extra $500)<br/>• Black River (for extra $300)<br/>• Black River Hospital ($500)";
-  fe.style.display = "block";
-  return;
+  // Add night delivery check based on selected area
+  if (isNightDelivery()) {
+    const addressLower = address.toLowerCase();
+    let nightZones = [];
+    let nightMessage = "";
+    
+    if (selectedArea === 'black-river') {
+      nightZones = ["brompton", "crane road", "black river", "black river hospital"];
+      nightMessage = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (for extra $500)<br/>• Crane Road (for extra $500)<br/>• Black River (for extra $300)<br/>• Black River Hospital ($500)";
+    } else if (selectedArea === 'savanna-la-mar') {
+      nightZones = ["dunn bar", "george street", "paradise"];
+      nightMessage = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Dunn Bar (for extra $400)<br/>• George Street (for extra $300)<br/>• Paradise (for extra $500)";
+    }
+    
+    const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
+    
+    if (!isValidNightZone) {
+      const fe = document.getElementById("form-error");
+      fe.innerHTML = nightMessage;
+      fe.style.display = "block";
+      return;
+    }
   }
-}
 
   document.getElementById("form-error").style.display = "none";
 
@@ -894,7 +908,12 @@ if (isNightDelivery()) {
 
   orderDetails += `\nDELIVERY FEE: JMD $${deliveryFee.toFixed(2)}\nGRAND TOTAL: JMD $${grandTotal.toFixed(2)}`;
 
-  const whatsappNumber = "18768899523"; // ✅ Your WhatsApp number
+  // Use different WhatsApp numbers based on selected area
+  let whatsappNumber = "18768899523"; // Default Black River number
+  if (selectedArea === 'savanna-la-mar') {
+    whatsappNumber = "YOUR_SAVANNA_LA_MAR_WHATSAPP_NUMBER"; // Replace with actual number
+  }
+
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderDetails)}`;
 
   // Open WhatsApp with the prefilled message
@@ -911,7 +930,8 @@ if (isNightDelivery()) {
 
   setTimeout(closeCheckout, 2000);
 }
-
+  
+  let selectedArea = 'black-river'; // Default area
 
   // Add these after the existing global variables (after let cart = [];)
 function getCurrentTime() {
@@ -962,6 +982,7 @@ function showClosedPopup() {
 
 
 function selectArea(area) {
+  selectedArea = area; // Store the selected area
   document.getElementById("area-selection-modal").style.display = "none";
   
   if (area === 'black-river') {
@@ -972,7 +993,7 @@ function selectArea(area) {
     showSavannaLaMarCheckout();
   }
 }
-
+  
 function closeAreaSelection() {
   document.getElementById("area-selection-modal").style.display = "none";
 }
