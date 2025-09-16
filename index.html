@@ -857,10 +857,10 @@ if (isNightDelivery()) {
   const isValidNightZone = nightZones.some(zone => addressLower.includes(zone));
   
   if (!isValidNightZone) {
-    const fe = document.getElementById("form-error");
-    fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (+$500)<br/>• Crane Road (+$500)<br/>• Black River (+$300)<br/>• Black River Hospital ($500)";
-    fe.style.display = "block";
-    return;
+  const fe = document.getElementById("form-error");
+  fe.innerHTML = "NIGHT DELIVERY (after 8PM) is only available to:<br/>• Brompton (for extra $500)<br/>• Crane Road (for extra $500)<br/>• Black River (for extra $300)<br/>• Black River Hospital ($500)";
+  fe.style.display = "block";
+  return;
   }
 }
 
